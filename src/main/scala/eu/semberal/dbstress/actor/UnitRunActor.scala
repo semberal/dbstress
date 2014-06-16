@@ -1,30 +1,33 @@
 package eu.semberal.dbstress.actor
 
-import java.sql.{DriverManager, ResultSet}
-
-import akka.actor.{ActorLogging, Actor}
-import akka.event.LoggingReceive
-import eu.semberal.dbstress.model.{TestUnitConfig, UnitRunResult}
-import org.duh.resource._
+import akka.actor.{Actor, ActorLogging, PoisonPill, Props}
+import eu.semberal.dbstress.model._
 
 class UnitRunActor extends Actor with ActorLogging {
 
-  override def receive: Receive = LoggingReceive {
+  private val CommunicationActorName = "dbCommunicationActor"
 
-    case TestUnitConfig(uri, username, password, query) =>
+  private var remainingRepeats: Int = _
 
-      for (connection <- DriverManager.getConnection(uri).auto;
-           statement <- connection.createStatement().auto) {
+  private var dbConfig: DbConfig = _
 
-        val start = System.currentTimeMillis()
-        statement.execute(query)
-        val resultSet: ResultSet = statement.getResultSet
-        val fetched: Int = Iterator.continually({
-          val n = resultSet.next()
-          if (n) 1 else 0
-        }).takeWhile(_ == 1).sum
-        val end = System.currentTimeMillis()
-        sender ! UnitRunResult(success = true, start, end, fetched)
+  override def receive: Receive = configWait
+
+  def resultWait: Receive = {
+    case dbResult: DbResult =>
+      context.parent ! dbResult
+      remainingRepeats -= 1
+
+      if (remainingRepeats > 0) {
+        context.child(CommunicationActorName).foreach(_ ! dbConfig)
       }
+  }
+
+  val configWait: Receive = {
+    case TestUnitConfig(config, repeats) =>
+      this.dbConfig = config
+      context.become(resultWait) // todo become for next message?
+      remainingRepeats = repeats
+      context.actorOf(Props[DbCommActor], CommunicationActorName) ! config
   }
 }
