@@ -4,7 +4,7 @@ package object model {
 
   case class Scenario(units: Seq[TestUnit])
 
-  case class TestUnit(name: String, config: TestUnitConfig, parallelUsers: Int)
+  case class TestUnit(name: String, config: TestUnitConfig, parallelConnections: Int)
 
   case class TestUnitConfig(dbConfig: DbConfig, repeats: Int)
 
