@@ -27,7 +27,7 @@ class UnitActor extends Actor with ActorLogging {
     case x: DbResult =>
       unitResult = unitResult.copy(dbResults = x :: unitResult.dbResults)
       val receivedResultsCount = unitResult.dbResults.length
-      log.debug(s"unit=$unitName received=$receivedResultsCount remaining=${totalCount - receivedResultsCount}")
+//      log.debug(s"unit=$unitName received=$receivedResultsCount remaining=${totalCount - receivedResultsCount}")
       if (receivedResultsCount == totalCount) {
         context.parent ! unitResult
 //        self ! PoisonPill

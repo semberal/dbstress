@@ -22,17 +22,26 @@ package object model {
   case class DbFailure(start: Long, finish: Long, e: Throwable) extends DbResult
 
   case class UnitResult(name: String, dbResults: List[DbResult]) {
-    private val success: DbResult => Boolean = _.isInstanceOf[DbSuccess]
-    private val failure: DbResult => Boolean = !success(_)
+    lazy val successes = dbResults.filter(_.isInstanceOf[DbSuccess])
+    lazy val failures = dbResults.filter(_.isInstanceOf[DbFailure])
 
-    lazy val percentSuccess: Double =
-      dbResults.count(success) / dbResults.length.asInstanceOf[Double] * 100
+    // todo handle empty dbResults list
+    lazy val percentSuccess: Double = successes.length / dbResults.length.asInstanceOf[Double] * 100
 
-    lazy val percentFailure = 100.0 - percentSuccess
+    lazy val percentFailure = failures.length / dbResults.length.asInstanceOf[Double] * 100
 
-    lazy val avgDuration: Double = {
-      val l = dbResults.map(x => x.finish - x.start)//.filter(_ > 0)
-      l.sum / l.length.asInstanceOf[Double]
+    lazy val avgDuration = calculateAvgDuration(dbResults)
+
+    lazy val avgSuccessDuration = calculateAvgDuration(successes)
+
+    lazy val avgFailedDuration = calculateAvgDuration(failures)
+
+    private def calculateAvgDuration(l: List[DbResult]): Option[Double] = { // todo proper statistics library
+      val listLength = l.length
+      if(listLength == 0) None else {
+        val m = l.map(x => x.finish - x.start)
+        Some(m.sum / m.length.asInstanceOf[Double])
+      }
     }
   }
 }

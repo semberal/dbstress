@@ -1,7 +1,10 @@
 package eu.semberal.dbstress.actor
 
+import java.io.{BufferedWriter, FileWriter}
+
 import akka.actor.{Actor, ActorLogging, Props}
 import eu.semberal.dbstress.model.{Scenario, UnitResult}
+import org.duh.resource._
 
 class ManagerActor extends Actor with ActorLogging {
 
@@ -16,11 +19,25 @@ class ManagerActor extends Actor with ActorLogging {
   def resultWaitReceive(waiting: Int, unitResults: List[UnitResult]): Option[Receive] =
     if (waiting == 0) {
       context.system.shutdown()
+      // todo some proper csv library
+      for (b <- new BufferedWriter(new FileWriter("/home/semberal/Desktop/result.csv")).auto) {
+        val header = List("name", "total_queries_count",
+          "succ_queries_count", "succ_percent", "succ_avg_duration",
+          "fail_queries_count", "fail_percent", "fail_avg_duration")
+        b.write(header.mkString(","))
+        b.newLine()
+        unitResults foreach { result =>
+          val s = List(result.name, result.dbResults.size,
+            result.successes.length, result.percentSuccess, result.avgSuccessDuration.getOrElse("-"),
+            result.failures.length, result.percentFailure, result.avgFailedDuration.getOrElse("-")).mkString(",")
+          b.write(s)
+          b.newLine()
+        }
+      }
       None
     } else {
       val pf: PartialFunction[Any, Unit] = {
         case x: UnitResult =>
-          log.info(s"action=unit_result_received success=${x.percentSuccess}% failure=${x.percentFailure}% duration_avg=${x.avgDuration}ms")
           resultWaitReceive(waiting - 1, x :: unitResults).foreach(context.become)
       }
       Some(pf)
