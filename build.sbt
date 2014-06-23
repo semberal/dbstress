@@ -18,6 +18,10 @@ libraryDependencies += "org.duh" %% "scala-resource-simple" % "0.3"
 
 libraryDependencies += "com.h2database" % "h2" % "1.4.178"
 
-libraryDependencies += "ch.qos.logback" % "logback-parent" % "1.1.2"
+libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2" % "runtime"
+
+libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2"
 
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.7"
+
+libraryDependencies += "org.scalanlp" %% "breeze" % "0.8.1"

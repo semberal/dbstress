@@ -1,20 +1,21 @@
 ---
 unit_name: unit1
-query: select 1
+query: "select 1"
 uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
 username: sa
 password:
-parallel_connections: 5000
-repeats: 6
+parallel_connections: 1
+repeats: 2
 query_timeout: 500
 unit_timeout: 30000
 ---
 unit_name: unit2
 query: select 1
 uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
 username: sa
 password:
-query: selectasd 1
 parallel_connections: 4
 repeats: 6
 query_timeout: 500

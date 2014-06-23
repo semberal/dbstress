@@ -1,5 +1,7 @@
 package eu.semberal.dbstress
 
+import breeze.stats._
+
 package object model {
 
   case class Scenario(units: Seq[TestUnit])
@@ -8,7 +10,7 @@ package object model {
 
   case class TestUnitConfig(dbConfig: DbConfig, repeats: Int)
 
-  case class DbConfig(uri: String, username: String, password: String, query: String)
+  case class DbConfig(uri: String, driverClass: String, username: String, password: String, query: String)
 
   case class UnitResults()
 
@@ -22,13 +24,12 @@ package object model {
   case class DbFailure(start: Long, finish: Long, e: Throwable) extends DbResult
 
   case class UnitResult(name: String, dbResults: List[DbResult]) {
-    lazy val successes = dbResults.filter(_.isInstanceOf[DbSuccess])
-    lazy val failures = dbResults.filter(_.isInstanceOf[DbFailure])
+    lazy val successes = dbResults.collect({ case e: DbSuccess => e})
+    lazy val failures = dbResults.collect({ case e: DbFailure => e})
 
-    // todo handle empty dbResults list
-    lazy val percentSuccess: Double = successes.length / dbResults.length.asInstanceOf[Double] * 100
+    lazy val percentSuccess: Option[Double] = calcualtePercent(successes.length, dbResults.length)
 
-    lazy val percentFailure = failures.length / dbResults.length.asInstanceOf[Double] * 100
+    lazy val percentFailure = calcualtePercent(failures.length, dbResults.length)
 
     lazy val avgDuration = calculateAvgDuration(dbResults)
 
@@ -36,12 +37,12 @@ package object model {
 
     lazy val avgFailedDuration = calculateAvgDuration(failures)
 
-    private def calculateAvgDuration(l: List[DbResult]): Option[Double] = { // todo proper statistics library
-      val listLength = l.length
-      if(listLength == 0) None else {
-        val m = l.map(x => x.finish - x.start)
-        Some(m.sum / m.length.asInstanceOf[Double])
-      }
-    }
+    lazy val exceptionMessages = failures.map(_.e)
+
+    private def calculateAvgDuration(l: List[DbResult]): Option[Double] =
+      if (l.isEmpty) None else Some(mean(l.map(x => x.finish - x.start.toDouble)))
+
+    private def calcualtePercent(x1: Long, x2: Long): Option[Double] = if (x2 == 0) None else Some(x1 / x2.toDouble * 100)
   }
+
 }

@@ -1,8 +1,10 @@
 package eu.semberal.dbstress.actor
 
+import java.sql.SQLException
 import java.util.concurrent.TimeUnit.SECONDS
 
-import akka.actor.{Actor, ActorLogging, PoisonPill, Props}
+import akka.actor.SupervisorStrategy._
+import akka.actor._
 import akka.util.Timeout
 import eu.semberal.dbstress.model.{DbResult, TestUnit, UnitResult}
 
@@ -13,6 +15,16 @@ class UnitActor extends Actor with ActorLogging {
   private var totalCount: Int = _
 
   private var unitName: String = _
+
+  override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy(){
+    val d: Decider = {
+      case e: SQLException =>
+        log.warning(s"An exception has occurred during unit execution unit_name=$unitName", e)
+        context.parent ! UnitResult(unitName, Nil)
+        Stop
+    }
+    d orElse defaultDecider
+  }
 
   override def receive: Receive = {
     case TestUnit(name, unitConfig, parallelUsers) =>
