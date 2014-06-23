@@ -1,7 +1,5 @@
 package eu.semberal.dbstress
 
-import breeze.stats._
-
 package object model {
 
   case class Scenario(units: Seq[TestUnit])
@@ -24,25 +22,20 @@ package object model {
   case class DbFailure(start: Long, finish: Long, e: Throwable) extends DbResult
 
   case class UnitResult(name: String, dbResults: List[DbResult]) {
+    val dbResultsToDurations: DbResult => Double = x => x.finish.toDouble - x.start
     lazy val successes = dbResults.collect({ case e: DbSuccess => e})
     lazy val failures = dbResults.collect({ case e: DbFailure => e})
 
-    lazy val percentSuccess: Option[Double] = calcualtePercent(successes.length, dbResults.length)
+    lazy val succDurations = successes.map(dbResultsToDurations)
+    lazy val failDurations = failures.map(dbResultsToDurations)
 
-    lazy val percentFailure = calcualtePercent(failures.length, dbResults.length)
+    lazy val percentSuccess: Option[Double] = calcualtePortion(successes.length, dbResults.length)
 
-    lazy val avgDuration = calculateAvgDuration(dbResults)
-
-    lazy val avgSuccessDuration = calculateAvgDuration(successes)
-
-    lazy val avgFailedDuration = calculateAvgDuration(failures)
+    lazy val percentFailure = calcualtePortion(failures.length, dbResults.length)
 
     lazy val exceptionMessages = failures.map(_.e)
 
-    private def calculateAvgDuration(l: List[DbResult]): Option[Double] =
-      if (l.isEmpty) None else Some(mean(l.map(x => x.finish - x.start.toDouble)))
-
-    private def calcualtePercent(x1: Long, x2: Long): Option[Double] = if (x2 == 0) None else Some(x1 / x2.toDouble * 100)
+    private[this] def calcualtePortion(x1: Long, x2: Long): Option[Double] =
+      if (x2 == 0) None else Some(x1 / x2.toDouble * 100)
   }
-
 }

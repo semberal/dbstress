@@ -5,6 +5,8 @@ import java.io.{BufferedWriter, FileWriter}
 import akka.actor.{Actor, ActorLogging, Props}
 import eu.semberal.dbstress.model.{Scenario, UnitResult}
 import org.duh.resource._
+import eu.semberal.dbstress.util.ModelExtensions.OptionExtension
+import eu.semberal.dbstress.util.ModelExtensions.StatisticalExtensions
 
 class ManagerActor extends Actor with ActorLogging {
 
@@ -21,23 +23,34 @@ class ManagerActor extends Actor with ActorLogging {
       context.system.shutdown()
 
       /* Write results in a csv file */
-      for (b <- new BufferedWriter(new FileWriter("/home/semberal/Desktop/result.csv")).auto) { // todo configurable
+      for (b <- new BufferedWriter(new FileWriter("/home/semberal/Desktop/result.csv")).auto) {
+        // todo configurable
         val header = List("name", "total_queries_count",
-          "succ_queries_count", "succ_percent", "succ_avg_duration",
-          "fail_queries_count", "fail_percent", "fail_avg_duration")
+          "succ_queries", "succ_%", "succ_min", "succ_max", "succ_mean", "succ_median", "succ_variance",
+          "fail_queries", "fail_%", "fail_min", "fail_max", "fail_mean", "fail_median", "fail_variance")
         b.write(header.mkString(","))
         b.newLine()
         unitResults foreach { result =>
-          val s = List(result.name, result.dbResults.size,
-            result.successes.length, result.percentSuccess.getOrElse("-"), result.avgSuccessDuration.getOrElse("-"),
-            result.failures.length, result.percentFailure.getOrElse("-"), result.avgFailedDuration.getOrElse("-")).mkString(",")
+          val s = List(
+            result.name, result.dbResults.size,
+
+            result.successes.length, result.percentSuccess.getOrMissingString,
+            result.succDurations.minimum.getOrMissingString, result.succDurations.maximum.getOrMissingString,
+            result.succDurations.mean.getOrMissingString, result.succDurations.median.getOrMissingString,
+            result.succDurations.variance.getOrMissingString,
+
+            result.failures.length, result.percentFailure.getOrMissingString,
+            result.failDurations.minimum.getOrMissingString, result.failDurations.maximum.getOrMissingString,
+            result.failDurations.mean.getOrMissingString, result.failDurations.median.getOrMissingString,
+            result.failDurations.variance.getOrMissingString).mkString(",")
           b.write(s)
           b.newLine()
         }
       }
 
       /* Write exceptions */
-      for (b <- new BufferedWriter(new FileWriter("/home/semberal/Desktop/exceptions.csv")).auto) { // todo configurable
+      for (b <- new BufferedWriter(new FileWriter("/home/semberal/Desktop/exceptions.csv")).auto) {
+        // todo configurable
         for {u <- unitResults
              e <- u.exceptionMessages} {
           b.write(e.getMessage)
