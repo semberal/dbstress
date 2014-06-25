@@ -1,48 +1,58 @@
 package eu.semberal.dbstress.actor
 
-import java.sql.SQLException
-
-import akka.actor.SupervisorStrategy.{Decider, Escalate, defaultDecider}
 import akka.actor._
-import eu.semberal.dbstress.actor.DbCommActor.{Init, NextRound}
+import akka.event.LoggingReceive
+import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound, CloseConnection}
+import eu.semberal.dbstress.actor.UnitActor.{UnitRunFinished, UnitRunInitialized}
+import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnectionInitialized, InitUnitRun, StartUnitRun}
 import eu.semberal.dbstress.model._
 
-class UnitRunActor extends Actor with ActorLogging {
+class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with ActorLogging {
 
-  private val CommunicationActorName = "dbCommunicationActor"
+  private val DbCommunicationActorName = "dbCommunicationActor"
 
-  private var remainingRepeats: Int = _
-
-  private var dbConfig: DbConfig = _
-
-  override def receive: Receive = configWait
-
-  override def supervisorStrategy: SupervisorStrategy = OneForOneStrategy() {
-    val d: Decider = {
-      case e: SQLException =>
-        context.stop(self)
-        Escalate
-    }
-    d orElse defaultDecider
+  override def receive = LoggingReceive {
+    case InitUnitRun =>
+      context.become(confirmationWait)
+      val dbWorker = context.actorOf(Props(classOf[DbCommunicationActor], unitRunConfig.dbConfig), DbCommunicationActorName)
+      dbWorker ! InitDbConnection
   }
 
-  def resultWait: Receive = {
-    case dbResult: DbResult =>
-      context.parent ! dbResult
-      remainingRepeats -= 1
+  private val startUnitRunWait: Receive = LoggingReceive {
+    case StartUnitRun =>
+      context.child(DbCommunicationActorName).foreach(_ ! NextRound)
+      context.become(resultWait(Nil))
+  }
 
-      if (remainingRepeats > 0) {
-        context.child(CommunicationActorName).foreach(_ ! NextRound)
+  private val confirmationWait: Receive = LoggingReceive {
+    case DbConnectionInitialized =>
+      context.parent ! UnitRunInitialized
+      context.become(startUnitRunWait)
+  }
+
+  def resultWait(result: UnitRunResult): Receive = LoggingReceive {
+    case DbCallFinished(dbResult) =>
+      val newResult = dbResult :: result
+
+      if (newResult.size < unitRunConfig.repeats) {
+        context.child(DbCommunicationActorName).foreach(_ ! NextRound)
+        context.become(resultWait(newResult))
+      } else {
+        context.parent ! UnitRunFinished(newResult)
+        context.child(DbCommunicationActorName).foreach(_ ! CloseConnection)
       }
   }
+}
 
-  val configWait: Receive = {
-    case TestUnitConfig(config, repeats) =>
-      this.dbConfig = config
-      context.become(resultWait) // todo become for next message?
-      remainingRepeats = repeats
-      val dbWorker = context.actorOf(Props(classOf[DbCommActor], config), CommunicationActorName)
-      dbWorker ! Init
-      dbWorker ! NextRound
-  }
+object UnitRunActor {
+
+  case object InitUnitRun
+
+  case object DbConnectionInitialized
+
+  case object StartUnitRun
+
+  case class DbCallFinished(dbResult: DbResult)
+
+  case object DbConnectionTerminated
 }

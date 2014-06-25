@@ -25,3 +25,5 @@ libraryDependencies += "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "
 libraryDependencies += "org.slf4j" % "slf4j-api" % "1.7.7"
 
 libraryDependencies += "org.scalanlp" %% "breeze" % "0.8.1"
+
+libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.1"
