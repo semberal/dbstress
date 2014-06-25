@@ -26,9 +26,8 @@ class DbCommActor(config: DbConfig) extends Actor {
       Class.forName(config.driverClass)
       connection = Some(DriverManager.getConnection(config.uri, config.username, config.password))
     case NextRound =>
-      val start = System.currentTimeMillis()
       implicit val executionContext = context.system.dispatcher
-      Class.forName(config.driverClass)
+      val start = System.currentTimeMillis()
       val f: Future[Int] = Future {
         connection.map { c =>
           for (statement <- c.createStatement().auto) yield {
@@ -53,9 +52,6 @@ class DbCommActor(config: DbConfig) extends Actor {
 }
 
 object DbCommActor {
-
   case object NextRound
-
   case object Init
-
 }

@@ -12,6 +12,7 @@ object ModelExtensions {
     def median: Option[Double] = withNonEmptyList(breeze.stats.median apply _)
     def mean: Option[Double] = withNonEmptyList(breeze.stats.mean apply _)
     def variance: Option[Double] = withNonEmptyList(breeze.stats.variance apply _)
+    def stddev: Option[Double] = withNonEmptyList(breeze.stats.stddev apply _)
 
     def minimum: Option[Double] = withNonEmptyList(breeze.linalg.min apply _)
     def maximum: Option[Double] = withNonEmptyList(breeze.linalg.max apply _)

@@ -22,7 +22,7 @@ package object model {
   case class DbFailure(start: Long, finish: Long, e: Throwable) extends DbResult
 
   case class UnitResult(name: String, dbResults: List[DbResult]) {
-    val dbResultsToDurations: DbResult => Double = x => x.finish.toDouble - x.start
+    private val dbResultsToDurations: DbResult => Double = x => x.finish.toDouble - x.start
     lazy val successes = dbResults.collect({ case e: DbSuccess => e})
     lazy val failures = dbResults.collect({ case e: DbFailure => e})
 
@@ -35,7 +35,7 @@ package object model {
 
     lazy val exceptionMessages = failures.map(_.e)
 
-    private[this] def calcualtePortion(x1: Long, x2: Long): Option[Double] =
+    private def calcualtePortion(x1: Long, x2: Long): Option[Double] =
       if (x2 == 0) None else Some(x1 / x2.toDouble * 100)
   }
 }

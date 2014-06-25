@@ -26,8 +26,8 @@ class ManagerActor extends Actor with ActorLogging {
       for (b <- new BufferedWriter(new FileWriter("/home/semberal/Desktop/result.csv")).auto) {
         // todo configurable
         val header = List("name", "total_queries_count",
-          "succ_queries", "succ_%", "succ_min", "succ_max", "succ_mean", "succ_median", "succ_variance",
-          "fail_queries", "fail_%", "fail_min", "fail_max", "fail_mean", "fail_median", "fail_variance")
+          "succ_queries", "succ_%", "succ_min", "succ_max", "succ_mean", "succ_median", "succ_stddev",
+          "fail_queries", "fail_%", "fail_min", "fail_max", "fail_mean", "fail_median", "fail_stddev")
         b.write(header.mkString(","))
         b.newLine()
         unitResults foreach { result =>
@@ -37,12 +37,12 @@ class ManagerActor extends Actor with ActorLogging {
             result.successes.length, result.percentSuccess.getOrMissingString,
             result.succDurations.minimum.getOrMissingString, result.succDurations.maximum.getOrMissingString,
             result.succDurations.mean.getOrMissingString, result.succDurations.median.getOrMissingString,
-            result.succDurations.variance.getOrMissingString,
+            result.succDurations.stddev.getOrMissingString,
 
             result.failures.length, result.percentFailure.getOrMissingString,
             result.failDurations.minimum.getOrMissingString, result.failDurations.maximum.getOrMissingString,
             result.failDurations.mean.getOrMissingString, result.failDurations.median.getOrMissingString,
-            result.failDurations.variance.getOrMissingString).mkString(",")
+            result.failDurations.stddev.getOrMissingString).mkString(",")
           b.write(s)
           b.newLine()
         }
