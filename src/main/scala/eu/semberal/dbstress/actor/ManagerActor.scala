@@ -1,49 +1,50 @@
 package eu.semberal.dbstress.actor
 
-import akka.actor.{Actor, Props}
-import akka.event.LoggingReceive
+import akka.actor.{ActorRef, Actor, FSM, Props}
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import eu.semberal.dbstress.actor.ManagerActor.{UnitInitialized, UnitFinished, RunScenario}
-import eu.semberal.dbstress.actor.UnitActor.{StartUnit, InitUnit}
+import eu.semberal.dbstress.actor.ManagerActor._
+import eu.semberal.dbstress.actor.TerminatorActor.ScenarioCompleted
+import eu.semberal.dbstress.actor.UnitActor.{InitUnit, StartUnit}
 import eu.semberal.dbstress.model.{Scenario, UnitResult}
 import eu.semberal.dbstress.util.ResultsExporter
 
-class ManagerActor(scenario: Scenario) extends Actor with LazyLogging with ResultsExporter {
+class ManagerActor(scenario: Scenario, terminator: ActorRef) extends Actor with LazyLogging with ResultsExporter with FSM[State, Data] {
 
-  override def receive: Receive = LoggingReceive {
-    case RunScenario =>
+  startWith(Uninitialized, No)
+
+  when(Uninitialized) {
+    case Event(RunScenario, _) =>
       scenario.units.foreach(u => {
         context.actorOf(Props(classOf[UnitActor], u), u.name) ! InitUnit
       })
-      context.become(confirmationWait(scenario.units.size))
+      goto(InitConfirmationsWait) using RemainingInitUnitConfirmations(scenario.units.length)
   }
 
-  def confirmationWait(remainingConfirmations: Int): Receive = LoggingReceive {
-    case UnitInitialized(unitName) =>
-      val newRemainingConfirmations = remainingConfirmations - 1
-      logger.info(s"""Unit "$unitName" has been initialized, $newRemainingConfirmations more to go}""")
-      if(newRemainingConfirmations == 0) {
-        logger.info("All units have been initialized, starting the test itself")
+  when(InitConfirmationsWait) {
+    case Event(UnitInitialized(_), RemainingInitUnitConfirmations(n)) =>
+      if (n == 1) {
         context.children.foreach(_ ! StartUnit)
-        context.become(resultWaitReceive(Nil))
+        goto(ResultWait) using CollectedUnitResults(Nil)
       } else {
-        context.become(confirmationWait(newRemainingConfirmations))
+        stay() using RemainingInitUnitConfirmations(n - 1)
       }
   }
 
-  def resultWaitReceive(unitResults: List[UnitResult]): Receive = LoggingReceive {
-    case UnitFinished(unitResult) =>
-      val newUnitResults: List[UnitResult] = unitResult :: unitResults
-      logger.info(s"""Unit "${unitResult.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
+  when(ResultWait) {
+    case Event(UnitFinished(unitResult), CollectedUnitResults(l)) =>
+      val newUnitResults: List[UnitResult] = unitResult :: l
+      logger.info( s"""Unit "${unitResult.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
       if (newUnitResults.size == scenario.units.size) {
         logger.info("All units have successfully finished, exporting the results")
-        exportResults("/home/semberal/Desktop", newUnitResults)
-        logger.debug("Shutting down the actor system")
-        context.system.shutdown()
+        exportResults("/home/semberal/Desktop", newUnitResults) // todo path from config
+        terminator ! ScenarioCompleted
+        stay() // todo stay here?
       } else {
-        context.become(resultWaitReceive(newUnitResults))
+        stay() using CollectedUnitResults(newUnitResults)
       }
   }
+
+  initialize()
 }
 
 object ManagerActor {
@@ -53,5 +54,21 @@ object ManagerActor {
   case class UnitInitialized(name: String)
 
   case class UnitFinished(unitResult: UnitResult)
+
+  protected sealed trait State
+
+  protected case object Uninitialized extends State
+
+  protected case object InitConfirmationsWait extends State
+
+  protected case object ResultWait extends State
+
+  protected sealed trait Data
+
+  protected case object No extends Data
+
+  protected case class RemainingInitUnitConfirmations(n: Int) extends Data
+
+  protected case class CollectedUnitResults(l: List[UnitResult]) extends Data
 
 }

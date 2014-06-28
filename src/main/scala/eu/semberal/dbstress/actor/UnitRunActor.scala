@@ -1,47 +1,49 @@
 package eu.semberal.dbstress.actor
 
 import akka.actor._
-import akka.event.LoggingReceive
-import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound, CloseConnection}
+import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound}
 import eu.semberal.dbstress.actor.UnitActor.{UnitRunFinished, UnitRunInitialized}
-import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnectionInitialized, InitUnitRun, StartUnitRun}
+import eu.semberal.dbstress.actor.UnitRunActor._
 import eu.semberal.dbstress.model._
 
-class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with ActorLogging {
+class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with ActorLogging with FSM[State, UnitRunResult] {
 
   private val DbCommunicationActorName = "dbCommunicationActor"
 
-  override def receive = LoggingReceive {
-    case InitUnitRun =>
-      context.become(confirmationWait)
-      val dbWorker = context.actorOf(Props(classOf[DbCommunicationActor], unitRunConfig.dbConfig), DbCommunicationActorName)
-      dbWorker ! InitDbConnection
+  startWith(Uninitialized, Nil)
+
+  when(Uninitialized) {
+    case Event(InitUnitRun, _) =>
+      context.actorOf(Props(classOf[DbCommunicationActor], unitRunConfig.dbConfig), DbCommunicationActorName) ! InitDbConnection
+      goto(ConfirmationWait)
   }
 
-  private val startUnitRunWait: Receive = LoggingReceive {
-    case StartUnitRun =>
-      context.child(DbCommunicationActorName).foreach(_ ! NextRound)
-      context.become(resultWait(Nil))
-  }
-
-  private val confirmationWait: Receive = LoggingReceive {
-    case DbConnectionInitialized =>
+  when(ConfirmationWait) {
+    case Event(DbConnectionInitialized, _) =>
       context.parent ! UnitRunInitialized
-      context.become(startUnitRunWait)
+      goto(StartUnitRunWait)
   }
 
-  def resultWait(result: UnitRunResult): Receive = LoggingReceive {
-    case DbCallFinished(dbResult) =>
-      val newResult = dbResult :: result
+  when(StartUnitRunWait) {
+    case Event(StartUnitRun, _) =>
+      context.child(DbCommunicationActorName).foreach(_ ! NextRound)
+      goto(ResultWait)
+  }
 
-      if (newResult.size < unitRunConfig.repeats) {
+  when(ResultWait) {
+    case Event(DbCallFinished(dbResult), unitRunResult) =>
+      val newUnitRunResult = dbResult :: unitRunResult
+
+      if (newUnitRunResult.size < unitRunConfig.repeats) {
         context.child(DbCommunicationActorName).foreach(_ ! NextRound)
-        context.become(resultWait(newResult))
+        stay() using newUnitRunResult
       } else {
-        context.parent ! UnitRunFinished(newResult)
-        context.child(DbCommunicationActorName).foreach(_ ! CloseConnection)
+        context.parent ! UnitRunFinished(newUnitRunResult)
+        stop()
       }
   }
+
+  initialize()
 }
 
 object UnitRunActor {
@@ -55,4 +57,15 @@ object UnitRunActor {
   case class DbCallFinished(dbResult: DbResult)
 
   case object DbConnectionTerminated
+
+  protected sealed trait State
+
+  protected case object Uninitialized extends State
+
+  protected case object ConfirmationWait extends State
+
+  protected case object StartUnitRunWait extends State
+
+  protected case object ResultWait extends State
+
 }

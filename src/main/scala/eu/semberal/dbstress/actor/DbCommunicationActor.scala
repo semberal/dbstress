@@ -3,10 +3,9 @@ package eu.semberal.dbstress.actor
 import java.sql.{Connection, DriverManager}
 import java.util.concurrent.TimeoutException
 
-import akka.actor.Actor
-import akka.event.LoggingReceive
+import akka.actor.{Actor, FSM}
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import eu.semberal.dbstress.actor.DbCommunicationActor.{CloseConnection, InitDbConnection, NextRound}
+import eu.semberal.dbstress.actor.DbCommunicationActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnectionInitialized}
 import eu.semberal.dbstress.model.{DbCommunicationConfig, DbFailure, DbSuccess}
 import org.duh.resource._
@@ -15,20 +14,22 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationLong
 import scala.util.{Failure, Success}
 
-class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging {
+class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with FSM[State, Connection] {
 
-  override def receive = LoggingReceive {
-    case InitDbConnection =>
+  startWith(Uninitialized, null) // todo null?
+
+  when(Uninitialized) {
+    case Event(InitDbConnection, _) =>
       logger.trace("Creating database connection")
       Class.forName(dbConfig.driverClass)
       val connection = DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
       logger.trace("Database connection has been successfully created") // todo handle errors here
-      sender() ! DbConnectionInitialized
-      context.become(waitForJob(connection))
+      context.parent ! DbConnectionInitialized
+      goto(WaitForJob) using connection
   }
 
-  def waitForJob(connection: Connection): Receive = LoggingReceive {
-    case NextRound =>
+  when(WaitForJob) {
+    case Event(NextRound, connection) =>
       implicit val executionContext = context.system.dispatcher
       val start = System.currentTimeMillis()
 
@@ -54,8 +55,11 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         case Failure(e) =>
           context.parent ! DbCallFinished(DbFailure(start, System.currentTimeMillis(), e))
       }
+      stay()
+  }
 
-    case CloseConnection =>
+  onTermination {
+    case x@StopEvent(_, _, connection) => // todo unit test for closing the connection
       logger.trace("Closing database connection")
       try {
         connection.close()
@@ -65,6 +69,8 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
           logger.warn("Unable to close a database connection", e)
       }
   }
+
+  initialize()
 }
 
 object DbCommunicationActor {
@@ -73,6 +79,10 @@ object DbCommunicationActor {
 
   case object NextRound
 
-  case object CloseConnection
+  protected sealed trait State
+
+  protected case object Uninitialized extends State
+
+  protected case object WaitForJob extends State
 
 }

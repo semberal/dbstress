@@ -3,48 +3,52 @@ package eu.semberal.dbstress.actor
 import akka.actor._
 import akka.event.LoggingReceive
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import eu.semberal.dbstress.actor.ManagerActor.{UnitInitialized, UnitFinished}
-import eu.semberal.dbstress.actor.UnitActor.{UnitRunFinished, StartUnit, InitUnit, UnitRunInitialized}
-import eu.semberal.dbstress.actor.UnitRunActor.{StartUnitRun, InitUnitRun}
+import eu.semberal.dbstress.actor.ManagerActor.{UnitFinished, UnitInitialized}
+import eu.semberal.dbstress.actor.UnitActor._
+import eu.semberal.dbstress.actor.UnitRunActor.{InitUnitRun, StartUnitRun}
 import eu.semberal.dbstress.model._
 
-class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging {
+class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with FSM[State, Data] {
 
-  override def receive: Receive = LoggingReceive {
-    case InitUnit =>
+  startWith(Uninitialized, No)
+
+  when(Uninitialized) {
+    case Event(InitUnit, _) =>
       (1 to unitConfig.parallelConnections).map(i => {
-        context.actorOf(Props(classOf[UnitRunActor], unitConfig.config), s"user${i}run") ! InitUnitRun
+        val actor = context.actorOf(Props(classOf[UnitRunActor], unitConfig.config), s"user${i}run")
+        actor ! InitUnitRun
       })
-      context.become(confirmationWait(unitConfig.parallelConnections))
+      goto(InitConfirmationsWait) using RemainingInitUnitRunConfirmations(unitConfig.parallelConnections)
   }
 
-  private def unitRunResultWait(unitRunResults: List[UnitRunResult]): Receive = LoggingReceive {
-    case UnitRunFinished(unitRunResult) =>
-      logger.trace(s"Unit run result containing ${unitRunResult.size} items received")
-      val newUnitRunResults: List[UnitRunResult] = unitRunResult :: unitRunResults
-      if (newUnitRunResults.size == unitConfig.parallelConnections) {
-        context.parent ! UnitFinished(UnitResult(unitConfig.name, newUnitRunResults))
-      } else {
-        context.become(unitRunResultWait(newUnitRunResults))
-      }
-  }
-
-  private val startUnitWait: Receive = LoggingReceive {
-    case StartUnit =>
-      context.children.foreach(_ ! StartUnitRun)
-      context.become(unitRunResultWait(Nil))
-  }
-
-  def confirmationWait(remainingConfirmations: Int): Receive = LoggingReceive {
-    case UnitRunInitialized =>
-      val newRemainingConfirmations = remainingConfirmations - 1
-      if (newRemainingConfirmations > 0) {
-        context.become(confirmationWait(newRemainingConfirmations))
-      } else {
+  when(InitConfirmationsWait) {
+    case Event(UnitRunInitialized, RemainingInitUnitRunConfirmations(n)) =>
+      if (n == 1) {
         context.parent ! UnitInitialized(unitConfig.name)
-        context.become(startUnitWait)
+        goto(StartUnitWait) using No
+      } else {
+        goto(InitConfirmationsWait) using RemainingInitUnitRunConfirmations(n - 1)
       }
   }
+
+  when(StartUnitWait) {
+    case Event(StartUnit, _) =>
+      context.children.foreach(_ ! StartUnitRun)
+      goto(UnitRunResultsWait) using CollectedUnitRunResults(Nil)
+  }
+
+  when(UnitRunResultsWait) {
+    case Event(UnitRunFinished(result), CollectedUnitRunResults(l)) =>
+      val newUnitRunResults = result :: l
+      if (newUnitRunResults.length == unitConfig.parallelConnections) {
+        context.parent ! UnitFinished(UnitResult(unitConfig.name, newUnitRunResults))
+        stay() // todo not elegant, work already done, should be stopped. Solve deadletters problem
+      } else {
+        goto(UnitRunResultsWait) using CollectedUnitRunResults(newUnitRunResults)
+      }
+  }
+
+  initialize()
 }
 
 object UnitActor {
@@ -56,5 +60,23 @@ object UnitActor {
   case object StartUnit
 
   case class UnitRunFinished(unitRunResult: UnitRunResult)
+
+  protected sealed trait State
+
+  protected case object Uninitialized extends State
+
+  protected case object InitConfirmationsWait extends State
+
+  protected case object StartUnitWait extends State
+
+  protected case object UnitRunResultsWait extends State
+
+  protected sealed trait Data
+
+  protected case object No extends Data
+
+  protected case class RemainingInitUnitRunConfirmations(n: Int) extends Data
+
+  protected case class CollectedUnitRunResults(l: List[UnitRunResult]) extends Data
 
 }
