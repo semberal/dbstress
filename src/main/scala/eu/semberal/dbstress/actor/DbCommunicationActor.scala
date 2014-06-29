@@ -14,9 +14,9 @@ import scala.concurrent.Future
 import scala.concurrent.duration.DurationLong
 import scala.util.{Failure, Success}
 
-class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with FSM[State, Connection] {
+class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with FSM[State, Option[Connection]] {
 
-  startWith(Uninitialized, null) // todo null?
+  startWith(Uninitialized, None)
 
   when(Uninitialized) {
     case Event(InitDbConnection, _) =>
@@ -25,7 +25,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
       val connection = DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
       logger.trace("Database connection has been successfully created") // todo handle errors here
       context.parent ! DbConnectionInitialized
-      goto(WaitForJob) using connection
+      goto(WaitForJob) using Some(connection)
   }
 
   when(WaitForJob) {
@@ -34,14 +34,16 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
       val start = System.currentTimeMillis()
 
       val dbFuture: Future[Int] = Future {
-        for (statement <- connection.createStatement().auto) yield {
-          statement.execute(dbConfig.query)
-          val resultSet = statement.getResultSet
-          Iterator.continually({
-            val n = resultSet.next()
-            if (n) 1 else 0
-          }).takeWhile(_ == 1).sum
-        }
+        connection.map { conn =>
+          for (statement <- conn.createStatement().auto) yield {
+            statement.execute(dbConfig.query)
+            val resultSet = statement.getResultSet
+            Iterator.continually({
+              val n = resultSet.next()
+              if (n) 1 else 0
+            }).takeWhile(_ == 1).sum
+          }
+        }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
 
       val timeoutFuture = akka.pattern.after(2.millis, using = context.system.scheduler) {
@@ -62,7 +64,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
     case x@StopEvent(_, _, connection) => // todo unit test for closing the connection
       logger.trace("Closing database connection")
       try {
-        connection.close()
+        connection.foreach(_.close())
         logger.trace("Database connection has been successfully closed")
       } catch {
         case e: Throwable =>
