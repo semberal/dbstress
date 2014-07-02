@@ -14,7 +14,8 @@ object ConfigParser {
       yaml.loadAll(x).map(x => Map(x.asInstanceOf[java.util.Map[String, Object]].toList: _*))
     }.map(map => {
       val dbConfig = DbCommunicationConfig(map("uri").asInstanceOf[String], map("driver_class").asInstanceOf[String],
-        map("username").asInstanceOf[String], map("password").asInstanceOf[String], map("query").asInstanceOf[String])
+        map("username").asInstanceOf[String], map("password").asInstanceOf[String], map("query").asInstanceOf[String],
+        map("connection_timeout").asInstanceOf[Int], map("query_timeout").asInstanceOf[Int])
       val unitConfig = UnitRunConfig(dbConfig, map("repeats").asInstanceOf[Int])
       UnitConfig(map("unit_name").asInstanceOf[String], unitConfig, map("parallel_connections").asInstanceOf[Int])
     }).toList

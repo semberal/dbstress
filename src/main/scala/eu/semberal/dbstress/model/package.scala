@@ -9,7 +9,9 @@ package object model {
 
   case class UnitRunConfig(dbConfig: DbCommunicationConfig, repeats: Int)
 
-  case class DbCommunicationConfig(uri: String, driverClass: String, username: String, password: String, query: String)
+  case class DbCommunicationConfig(uri: String, driverClass: String,
+                                   username: String, password: String, query: String,
+                                   connectionTimeout: Int, queryTimeout: Int)
 
   sealed trait DbResult {
     val start: Long

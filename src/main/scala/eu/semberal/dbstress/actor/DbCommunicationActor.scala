@@ -7,7 +7,7 @@ import akka.actor.{Actor, FSM}
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.DbCommunicationActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnectionInitialized}
-import eu.semberal.dbstress.model.{DbCommunicationConfig, DbFailure, DbSuccess}
+import eu.semberal.dbstress.model._
 import org.duh.resource._
 
 import scala.concurrent.Future
@@ -46,8 +46,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
 
-      val timeoutFuture = akka.pattern.after(2.millis, using = context.system.scheduler) {
-        // todo timeout from configuration
+      val timeoutFuture = akka.pattern.after(dbConfig.queryTimeout.millis, using = context.system.scheduler) {
         throw new TimeoutException("Database call has timed out")
       }
 

@@ -7,6 +7,7 @@ username: sa
 password:
 parallel_connections: 100
 repeats: 5
+connection_timeout: 500
 query_timeout: 500
 unit_timeout: 30000
 ---
@@ -18,5 +19,6 @@ username: sa
 password:
 parallel_connections: 5
 repeats: 100
+connection_timeout: 500
 query_timeout: 500
 unit_timeout: 30000
