@@ -1,7 +1,8 @@
 package eu.semberal.dbstress.actor
 
 import java.sql.{Connection, DriverManager}
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.TimeUnit.MILLISECONDS
+import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.{Actor, FSM}
 import com.typesafe.scalalogging.slf4j.LazyLogging
@@ -11,7 +12,7 @@ import eu.semberal.dbstress.model._
 import org.duh.resource._
 
 import scala.concurrent.Future
-import scala.concurrent.duration.DurationLong
+import scala.concurrent.duration.{Duration, DurationLong}
 import scala.util.{Failure, Success}
 
 class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with FSM[State, Option[Connection]] {
@@ -45,7 +46,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
 
-      val timeoutFuture = akka.pattern.after(dbConfig.queryTimeout.millis, using = context.system.scheduler) {
+      val timeoutFuture = akka.pattern.after(Duration.create(dbConfig.queryTimeout, MILLISECONDS), using = context.system.scheduler) {
         throw new TimeoutException("Database call has timed out")
       }
 
