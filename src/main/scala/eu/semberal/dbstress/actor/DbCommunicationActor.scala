@@ -33,15 +33,14 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
       implicit val executionContext = context.system.dispatcher
       val start = System.currentTimeMillis()
 
-      val dbFuture: Future[Int] = Future {
+      val dbFuture: Future[StatementResult] = Future {
         connection.map { conn =>
           for (statement <- conn.createStatement().auto) yield {
-            statement.execute(dbConfig.query)
-            val resultSet = statement.getResultSet
-            Iterator.continually({
-              val n = resultSet.next()
-              if (n) 1 else 0
-            }).takeWhile(_ == 1).sum
+            if (statement.execute(dbConfig.query)) {
+              val resultSet = statement.getResultSet // todo support multiple result sets (statement#getMoreResults)
+              val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
+              FetchedRows(fetchedRows) // todo unit tests
+            } else UpdateCount(statement.getUpdateCount)
           }
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }

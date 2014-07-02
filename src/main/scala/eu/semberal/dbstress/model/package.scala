@@ -18,7 +18,13 @@ package object model {
     val finish: Long
   }
 
-  case class DbSuccess(start: Long, finish: Long, noOfResults: Int) extends DbResult
+  sealed trait StatementResult
+
+  case class FetchedRows(n: Int) extends StatementResult
+
+  case class UpdateCount(n: Int) extends StatementResult
+
+  case class DbSuccess(start: Long, finish: Long, stmtResult: StatementResult) extends DbResult
 
   case class DbFailure(start: Long, finish: Long, e: Throwable) extends DbResult
 

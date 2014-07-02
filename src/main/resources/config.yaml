@@ -1,6 +1,6 @@
 ---
 unit_name: unit1
-query: "select 1"
+query: "create table a(b int)"
 uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
