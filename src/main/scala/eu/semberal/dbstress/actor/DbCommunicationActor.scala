@@ -14,7 +14,7 @@ import org.duh.resource._
 import org.joda.time.DateTime.now
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, Future, blocking}
 import scala.util.{Failure, Success}
 
 class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with FSM[State, Option[Connection]] {
@@ -28,7 +28,9 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
 
       val f = Future {
         Class.forName(dbConfig.driverClass)
-        DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password) // todo scala-async blocking{}
+        blocking {
+          DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password) // todo scala-async blocking{}
+        }
       }
 
       try {
@@ -50,13 +52,15 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
 
       val dbFuture: Future[StatementResult] = Future {
         connection.map { conn =>
-          for (statement <- conn.createStatement().auto) yield {
-            if (statement.execute(dbConfig.query)) {
-              val resultSet = statement.getResultSet // todo support multiple result sets (statement#getMoreResults)
-              val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
-              FetchedRows(fetchedRows) // todo unit tests
-            } else {
-              UpdateCount(statement.getUpdateCount)
+          blocking {
+            for (statement <- conn.createStatement().auto) yield {
+              if (statement.execute(dbConfig.query)) {
+                val resultSet = statement.getResultSet // todo support multiple result sets (statement#getMoreResults)
+                val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
+                FetchedRows(fetchedRows) // todo unit tests
+              } else {
+                UpdateCount(statement.getUpdateCount)
+              }
             }
           }
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
