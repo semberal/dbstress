@@ -1,24 +1,36 @@
 ---
 unit_name: unit1
-query: "create table a(b int)"
+query: "select 1"
 uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
 password:
-parallel_connections: 100
+parallel_connections: 2
 repeats: 5
 connection_timeout: 500
 query_timeout: 500
 # unit_timeout: 30000 # Not implemented yet
 ---
 unit_name: unit2
-query: selecta 1
-uri: "jdbc:h2:mem://localhost"
-driver_class: org.h2.Drivers
+query: select 1
+uri: "foobar"
+driver_class: org.h2.Driver
 username: sa
 password:
-parallel_connections: 5
-repeats: 100
+parallel_connections: 2
+repeats: 5
+connection_timeout: 500
+query_timeout: 500
+# unit_timeout: 30000 # Not implemented yet
+---
+unit_name: unit3
+query: selecta 1
+uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
+username: sa
+password:
+parallel_connections: 2
+repeats: 5
 connection_timeout: 500
 query_timeout: 500
 # unit_timeout: 30000 # Not implemented yet

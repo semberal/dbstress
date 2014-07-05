@@ -40,7 +40,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(start, now()))
       } catch {
         case e: Throwable => // todo unit tests
-          logger.debug("An error during connection initialization has occurred", e)
+          logger.trace("An error during connection initialization has occurred", e)
           stay() replying DbConnInitFinished(DbConnInitFailure(start, now(), e))
       }
   }
