@@ -9,16 +9,16 @@ parallel_connections: 100
 repeats: 5
 connection_timeout: 500
 query_timeout: 500
-unit_timeout: 30000
+# unit_timeout: 30000 # Not implemented yet
 ---
 unit_name: unit2
 query: selecta 1
 uri: "jdbc:h2:mem://localhost"
-driver_class: org.h2.Driver
+driver_class: org.h2.Drivers
 username: sa
 password:
 parallel_connections: 5
 repeats: 100
 connection_timeout: 500
 query_timeout: 500
-unit_timeout: 30000
+# unit_timeout: 30000 # Not implemented yet

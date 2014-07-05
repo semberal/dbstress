@@ -1,6 +1,6 @@
 package eu.semberal.dbstress.config
 
-import eu.semberal.dbstress.model.{UnitRunConfig, UnitConfig, DbCommunicationConfig, Scenario}
+import eu.semberal.dbstress.model.Configuration._
 import org.duh.resource._
 import org.yaml.snakeyaml.Yaml
 
