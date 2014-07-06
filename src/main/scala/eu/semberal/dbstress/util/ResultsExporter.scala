@@ -1,12 +1,14 @@
 package eu.semberal.dbstress.util
 
-import java.io.{BufferedWriter, FileWriter}
+import java.io.{BufferedWriter, File, FileWriter}
 
+import breeze.io.CSVWriter
 import com.typesafe.scalalogging.slf4j.LazyLogging
+import eu.semberal.dbstress.model.JsonSupport._
 import eu.semberal.dbstress.model.Results._
+import eu.semberal.dbstress.util.ModelExtensions._
 import org.duh.resource._
 import play.api.libs.json.Json
-import eu.semberal.dbstress.model.JsonSupport._
 
 trait ResultsExporter {
   this: LazyLogging =>
@@ -14,49 +16,46 @@ trait ResultsExporter {
   def exportResults(dir: String, unitResults: List[UnitResult]): Unit = {
 
     def writeCompleteJson(): Unit = {
-      for (b <- new BufferedWriter(new FileWriter(s"$dir/complete.json")).auto) {
+      for (b <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}complete.json")).auto) {
         val out = Json.prettyPrint(Json.toJson(unitResults))
         b.write(out)
       }
     }
 
-    //    /* Write results in a csv file */
-    //    for (b <- new BufferedWriter(new FileWriter(s"$dir/result.csv")).auto) {
-    //      // todo configurable
-    //      val header = List("name", "total_queries_count",
-    //        "succ_queries", "succ_%", "succ_min", "succ_max", "succ_mean", "succ_median", "succ_stddev",
-    //        "fail_queries", "fail_%", "fail_min", "fail_max", "fail_mean", "fail_median", "fail_stddev")
-    //      b.write(header.mkString(","))
-    //      b.newLine()
-    //      unitResults foreach { result =>
-    //        val s = List(
-    //          result.name, result.unitRunResults.map(_.callResults).flatten.size, // todo do not flatten, figure out how to display this
-    //
-    //          result.successes.size, result.percentSuccess.getOrMissingString,
-    //          result.succDurations.minimum.getOrMissingString, result.succDurations.maximum.getOrMissingString,
-    //          result.succDurations.mean.getOrMissingString, result.succDurations.median.getOrMissingString,
-    //          result.succDurations.stddev.getOrMissingString,
-    //
-    //          result.failures.size, result.percentFailure.getOrMissingString,
-    //          result.failDurations.minimum.getOrMissingString, result.failDurations.maximum.getOrMissingString,
-    //          result.failDurations.mean.getOrMissingString, result.failDurations.median.getOrMissingString,
-    //          result.failDurations.stddev.getOrMissingString).mkString(",")
-    //        b.write(s)
-    //        b.newLine()
-    //      }
-    //    }
-    //
-    //    /* Write exceptions */
-    //    for (b <- new BufferedWriter(new FileWriter(s"$dir/exceptions.csv")).auto) {
-    //      // todo configurable
-    //      for {u <- unitResults
-    //           e <- u.exceptionMessages} {
-    //        b.write(e.getMessage)
-    //        b.newLine()
-    //      }
-    //    }
+    def writeCsvSummary(): Unit = {
+      for (f <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}summary.csv")).auto) {
+
+        val header = IndexedSeq("name", "description",
+          "expectedDbCalls", "executedDbCalls", "notExecutedDbCalls", "successfulDbCalls", "failedDbCalls",
+          "executedDbCallsMin", "executedDbCallsMax", "executedDbCallsMean", "executedDbCallsMedian", "executedDbCallsStddev",
+          "successfulDbCallsMin", "successfulDbCallsMax", "successfulDbCallsMean", "successfulDbCallsMedian", "successfulDbCallsStddev",
+          "failedDbCallsMin", "failedDbCallsMax", "failedDbCallsMean", "failedDbCallsMedian", "failedDbCallsStddev"
+        )
+
+        val rows = List(unitResults.map(s =>
+          IndexedSeq(s.unitConfig.name, s.unitConfig.description,
+            s.summary.expectedDbCalls.toString, s.summary.executedDbCalls.toString, s.summary.notExecutedDbCalls.toString,
+            s.summary.successfulDbCalls.toString, s.summary.failedDbCalls.toString,
+
+            s.summary.executedDbCallsMin.getOrMissingString, s.summary.executedDbCallsMax.getOrMissingString,
+            s.summary.executedDbCallsMean.getOrMissingString, s.summary.executedDbCallsMedian.getOrMissingString,
+            s.summary.executedDbCallsStddev.getOrMissingString,
+
+            s.summary.successfulDbCallsMin.getOrMissingString, s.summary.successfulDbCallsMax.getOrMissingString,
+            s.summary.successfulDbCallsMean.getOrMissingString, s.summary.successfulDbCallsMedian.getOrMissingString,
+            s.summary.successfulDbCallsStddev.getOrMissingString,
+
+            s.summary.failedDbCallsMin.getOrMissingString, s.summary.failedDbCallsMax.getOrMissingString,
+            s.summary.failedDbCallsMean.getOrMissingString, s.summary.failedDbCallsMedian.getOrMissingString,
+            s.summary.failedDbCallsStddev.getOrMissingString
+          )
+        ): _*)
+
+        CSVWriter.write(f, header :: rows)
+      }
+    }
 
     writeCompleteJson()
+    writeCsvSummary()
   }
-
 }

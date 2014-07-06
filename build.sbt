@@ -21,7 +21,7 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.4.178",
   "ch.qos.logback" % "logback-classic" % "1.1.2" % "runtime",
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",
-  "org.slf4j" % "slf4j-api" % "1.7.7",
+  "org.slf4j" % "slf4j-api" % "1.7.7", // todo remove?
   "org.scalanlp" %% "breeze" % "0.8.1",
   "com.typesafe.play" %% "play-json" % "2.3.1",
   "joda-time" % "joda-time" % "2.3"

@@ -7,12 +7,9 @@ import eu.semberal.dbstress.model.Results._
 import org.joda.time.Duration
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import eu.semberal.dbstress.util.ModelExtensions._
 
 object JsonSupport extends LazyLogging {
-
-  implicit class NullableJsonValue(value: Option[Double]) {
-    def getJsNumber: JsValue = value.map(JsNumber(_)).getOrElse(JsNull)
-  }
 
   implicit val dbCallResultWrites: Writes[DbCallResult] =
     ((__ \ "successful").write[Boolean] ~
