@@ -1,6 +1,5 @@
 package eu.semberal.dbstress.actor
 
-import akka.actor.SupervisorStrategy.{Decider, Escalate, defaultDecider}
 import akka.actor._
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.ManagerActor.{UnitFinished, UnitInitialized}
@@ -8,16 +7,8 @@ import eu.semberal.dbstress.actor.UnitActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{InitUnitRun, StartUnitRun}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
-import eu.semberal.dbstress.model._
 
 class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with FSM[State, Data] {
-
-  override def supervisorStrategy: SupervisorStrategy = {
-    val decider: Decider = {
-      case e: DbConnectionInitializationException => Escalate
-    }
-    OneForOneStrategy()(decider orElse defaultDecider)
-  }
 
   startWith(Uninitialized, No)
 

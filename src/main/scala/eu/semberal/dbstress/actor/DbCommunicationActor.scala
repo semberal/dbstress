@@ -28,9 +28,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
 
       val f = Future {
         Class.forName(dbConfig.driverClass)
-        blocking {
-          DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password) // todo scala-async blocking{}
-        }
+        DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
       }
 
       try {
