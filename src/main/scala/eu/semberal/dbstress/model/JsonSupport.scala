@@ -2,14 +2,17 @@ package eu.semberal.dbstress.model
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.Defaults._
-import eu.semberal.dbstress.model.Configuration.{UnitConfig, UnitRunConfig, DbCommunicationConfig}
+import eu.semberal.dbstress.model.Configuration.{DbCommunicationConfig, UnitConfig, UnitRunConfig}
 import eu.semberal.dbstress.model.Results._
 import org.joda.time.Duration
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import eu.semberal.dbstress.util.ModelExtensions._
 
 object JsonSupport extends LazyLogging {
+
+  implicit class NullableJsonValue(value: Option[Double]) {
+    def getJsNumber: JsValue = value.map(JsNumber(_)).getOrElse(JsNull)
+  }
 
   implicit val dbCallResultWrites: Writes[DbCallResult] =
     ((__ \ "successful").write[Boolean] ~
@@ -40,46 +43,37 @@ object JsonSupport extends LazyLogging {
     ((__ \ "connectionInit").write[DbConnInitResult] ~
       (__ \ "callResults").write[Seq[DbCallResult]]) apply unlift(UnitRunResult.unapply)
 
-  implicit val unitSummaryWrites: Writes[UnitSummary] =
-    ((__ \ "expectedDbCalls").write[Int] ~
-      (__ \ "executedDbCalls").write[Int] ~
-      (__ \ "notExecutedDbCalls").write[Int] ~
-      (__ \ "successfulDbCalls").write[Int] ~
-      (__ \ "failedDbCalls").write[Int] ~
 
-      (__ \ "executedDbCallsMin").write[String] ~ // todo optional values are written as strings :/
-      (__ \ "executedDbCallsMax").write[String] ~
-      (__ \ "executedDbCallsMean").write[String] ~
-      (__ \ "executedDbCallsMedian").write[String] ~
-      (__ \ "executedDbCallsStddev").write[String] ~
+  implicit val foo: Writes[UnitSummary] = new Writes[UnitSummary] {
 
-      (__ \ "successfulDbCallsMin").write[String] ~
-      (__ \ "successfulDbCallsMax").write[String] ~
-      (__ \ "successfulDbCallsMean").write[String] ~
-      (__ \ "successfulDbCallsMedian").write[String] ~
-      (__ \ "successfulDbCallsStddev").write[String] ~
+    override def writes(o: UnitSummary): JsValue =
 
-      (__ \ "failedDbCallsMin").write[String] ~
-      (__ \ "failedDbCallsMax").write[String] ~
-      (__ \ "failedDbCallsMean").write[String] ~
-      (__ \ "failedDbCallsMedian").write[String] ~
-      (__ \ "failedDbCallsStddev").write[String]
-      ) apply (s =>
-      (s.expectedDbCalls, s.executedDbCalls, s.notExecutedDbCalls, s.successfulDbCalls, s.failedDbCalls,
+      JsObject(Seq(
+        "expectedDbCalls" -> JsNumber(o.expectedDbCalls),
+        "executedDbCalls" -> JsNumber(o.executedDbCalls),
+        "notExecutedDbCalls" -> JsNumber(o.notExecutedDbCalls),
+        "successfulDbCalls" -> JsNumber(o.successfulDbCalls),
+        "failedDbCalls" -> JsNumber(o.failedDbCalls),
 
-        s.executedDbCallsMin.getOrMissingString, s.executedDbCallsMax.getOrMissingString,
-        s.executedDbCallsMean.getOrMissingString, s.executedDbCallsMedian.getOrMissingString,
-        s.executedDbCallsStddev.getOrMissingString,
+        "executedDbCallsMin" -> o.executedDbCallsMin.getJsNumber,
+        "executedDbCallsMax" -> o.executedDbCallsMax.getJsNumber,
+        "executedDbCallsMean" -> o.executedDbCallsMean.getJsNumber,
+        "executedDbCallsMedian" -> o.executedDbCallsMedian.getJsNumber,
+        "executedDbCallsStddev" -> o.executedDbCallsStddev.getJsNumber,
 
-        s.successfulDbCallsMin.getOrMissingString, s.successfulDbCallsMax.getOrMissingString,
-        s.successfulDbCallsMean.getOrMissingString, s.successfulDbCallsMedian.getOrMissingString,
-        s.successfulDbCallsStddev.getOrMissingString,
+        "successfulDbCallsMin" -> o.successfulDbCallsMin.getJsNumber,
+        "successfulDbCallsMax" -> o.successfulDbCallsMax.getJsNumber,
+        "successfulDbCallsMean" -> o.successfulDbCallsMean.getJsNumber,
+        "successfulDbCallsMedian" -> o.successfulDbCallsMedian.getJsNumber,
+        "successfulDbCallsStddev" -> o.successfulDbCallsStddev.getJsNumber,
 
-        s.failedDbCallsMin.getOrMissingString, s.failedDbCallsMax.getOrMissingString,
-        s.failedDbCallsMean.getOrMissingString, s.failedDbCallsMedian.getOrMissingString,
-        s.failedDbCallsStddev.getOrMissingString
-        )
-      )
+        "failedDbCallsMin" -> o.failedDbCallsMin.getJsNumber,
+        "failedDbCallsMax" -> o.failedDbCallsMax.getJsNumber,
+        "failedDbCallsMean" -> o.failedDbCallsMean.getJsNumber,
+        "failedDbCallsMedian" -> o.failedDbCallsMedian.getJsNumber,
+        "failedDbCallsStddev" -> o.failedDbCallsStddev.getJsNumber
+      ))
+  }
 
   implicit val dbCommunicationConfigWrites: Writes[DbCommunicationConfig] =
     ((__ \ "uri").write[String] ~

@@ -3,7 +3,6 @@ package eu.semberal.dbstress.util
 import breeze.linalg.DenseVector
 
 object ModelExtensions {
-  private val MissingString: String = "-"
 
   implicit class StatisticalExtensions(l: List[Double]) {
 
@@ -20,7 +19,4 @@ object ModelExtensions {
     private def withNonEmptyList(f: DenseVector[Double] => Double) = if(l.isEmpty) None else Some(f(v))
   }
 
-  implicit class OptionExtension[T](o: Option[T]) {
-    def getOrMissingString: String = o.map(_.toString).getOrElse(MissingString)
-  }
 }
