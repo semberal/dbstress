@@ -101,7 +101,7 @@ object JsonSupportTest {
       DbCallSuccess(start, end, FetchedRows(10)),
       DbCallFailure(start, end, new RuntimeException)
     ))
-    UnitResult(UnitConfig("unit1", UnitRunConfig(dbCommunicationConfig, repeats), parallel), List(unitRunResults))
+    UnitResult(UnitConfig("unit1", "This is unit1", UnitRunConfig(dbCommunicationConfig, repeats), parallel), List(unitRunResults))
   }
 
   val expectedDbConnInitSuccess = JsObject(

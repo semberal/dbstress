@@ -46,7 +46,7 @@ object JsonSupport extends LazyLogging {
       (__ \ "successfulDbCalls").write[Int] ~
       (__ \ "failedDbCalls").write[Int] ~
 
-      (__ \ "executedDbCallsMin").write[String] ~
+      (__ \ "executedDbCallsMin").write[String] ~ // todo optional values are written as strings :/
       (__ \ "executedDbCallsMax").write[String] ~
       (__ \ "executedDbCallsMean").write[String] ~
       (__ \ "executedDbCallsMedian").write[String] ~

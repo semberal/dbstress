@@ -8,6 +8,11 @@ import scala.collection.JavaConversions._
 
 object ConfigParser {
 
+  /*
+  * todo Configurable config file (after command line options parsing is implemented)
+  * todo Ensure unique unit name (actor have the same name => must be unique)
+  * todo Values validation (e.g. repeats > 0, ...)
+  */
   def parseConfigurationYaml(): Scenario = {
     val yaml = new Yaml
     val units = for (x <- this.getClass.getClassLoader.getResourceAsStream("config.yaml").auto) yield {
@@ -17,7 +22,8 @@ object ConfigParser {
         map("username").asInstanceOf[String], map("password").asInstanceOf[String], map("query").asInstanceOf[String],
         map("connection_timeout").asInstanceOf[Int], map("query_timeout").asInstanceOf[Int])
       val unitConfig = UnitRunConfig(dbConfig, map("repeats").asInstanceOf[Int])
-      UnitConfig(map("unit_name").asInstanceOf[String], unitConfig, map("parallel_connections").asInstanceOf[Int])
+      UnitConfig(map("unit_name").asInstanceOf[String], map("description").asInstanceOf[String],
+        unitConfig, map("parallel_connections").asInstanceOf[Int])
     }).toList
     Scenario(units)
   }

@@ -1,5 +1,6 @@
 ---
 unit_name: unit1
+description: Example of a successful unit
 query: "select 1"
 uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
@@ -10,8 +11,10 @@ repeats: 5
 connection_timeout: 500
 query_timeout: 500
 # unit_timeout: 30000 # Not implemented yet
+
 ---
 unit_name: unit2
+description: Example of an unit which cannot even establish a connection (wrong uri string)
 query: select 1
 uri: "foobar"
 driver_class: org.h2.Driver
@@ -22,8 +25,11 @@ repeats: 5
 connection_timeout: 500
 query_timeout: 500
 # unit_timeout: 30000 # Not implemented yet
+
+
 ---
 unit_name: unit3
+description: Example of an unit the queries of which will always fail
 query: selecta 1
 uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
@@ -32,5 +38,33 @@ password:
 parallel_connections: 2
 repeats: 5
 connection_timeout: 500
+query_timeout: 500
+# unit_timeout: 30000 # Not implemented yet
+
+---
+unit_name: unit4
+description: Example of an unit the queries of which will fail from time to time (low query timeout)
+query: select 1
+uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
+username: sa
+password:
+parallel_connections: 2
+repeats: 5
+connection_timeout: 500
+query_timeout: 2
+# unit_timeout: 30000 # Not implemented yet
+
+---
+unit_name: unit5
+description: Example of an unit which will fail to establish a connection from time to time (low connection timeout)
+query: select 1
+uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
+username: sa
+password:
+parallel_connections: 100
+repeats: 5
+connection_timeout: 2
 query_timeout: 500
 # unit_timeout: 30000 # Not implemented yet

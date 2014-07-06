@@ -30,6 +30,6 @@ object UnitSummaryTest {
       DbCallSuccess(now(), now(), FetchedRows(10)),
       DbCallFailure(now(), now(), new RuntimeException)
     ))
-    UnitResult(UnitConfig("unit1", UnitRunConfig(dbCommunicationConfig, repeats), parallel), List(unitRunResults))
+    UnitResult(UnitConfig("unit1", "This is unit1", UnitRunConfig(dbCommunicationConfig, repeats), parallel), List(unitRunResults))
   }
 }
