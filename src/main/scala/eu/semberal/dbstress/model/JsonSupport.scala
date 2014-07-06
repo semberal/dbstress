@@ -6,6 +6,7 @@ import eu.semberal.dbstress.model.Results._
 import org.joda.time.Duration
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import eu.semberal.dbstress.util.ModelExtensions._
 
 object JsonSupport extends LazyLogging {
 
@@ -43,8 +44,41 @@ object JsonSupport extends LazyLogging {
       (__ \ "executedDbCalls").write[Int] ~
       (__ \ "notExecutedDbCalls").write[Int] ~
       (__ \ "successfulDbCalls").write[Int] ~
-      (__ \ "failedDbCalls").write[Int]) apply { s => (s.expectedDbCalls, s.executedDbCalls, s.notExecutedDbCalls, s.successfulDbCalls, s.failedDbCalls)
-    }
+      (__ \ "failedDbCalls").write[Int] ~
+
+      (__ \ "executedDbCallsMin").write[String] ~
+      (__ \ "executedDbCallsMax").write[String] ~
+      (__ \ "executedDbCallsMean").write[String] ~
+      (__ \ "executedDbCallsMedian").write[String] ~
+      (__ \ "executedDbCallsStddev").write[String] ~
+
+      (__ \ "successfulDbCallsMin").write[String] ~
+      (__ \ "successfulDbCallsMax").write[String] ~
+      (__ \ "successfulDbCallsMean").write[String] ~
+      (__ \ "successfulDbCallsMedian").write[String] ~
+      (__ \ "successfulDbCallsStddev").write[String] ~
+
+      (__ \ "failedDbCallsMin").write[String] ~
+      (__ \ "failedDbCallsMax").write[String] ~
+      (__ \ "failedDbCallsMean").write[String] ~
+      (__ \ "failedDbCallsMedian").write[String] ~
+      (__ \ "failedDbCallsStddev").write[String]
+      ) apply (s =>
+      (s.expectedDbCalls, s.executedDbCalls, s.notExecutedDbCalls, s.successfulDbCalls, s.failedDbCalls,
+
+        s.executedDbCallsMin.getOrMissingString, s.executedDbCallsMax.getOrMissingString,
+        s.executedDbCallsMean.getOrMissingString, s.executedDbCallsMedian.getOrMissingString,
+        s.executedDbCallsStddev.getOrMissingString,
+
+        s.successfulDbCallsMin.getOrMissingString, s.successfulDbCallsMax.getOrMissingString,
+        s.successfulDbCallsMean.getOrMissingString, s.successfulDbCallsMedian.getOrMissingString,
+        s.successfulDbCallsStddev.getOrMissingString,
+
+        s.failedDbCallsMin.getOrMissingString, s.failedDbCallsMax.getOrMissingString,
+        s.failedDbCallsMean.getOrMissingString, s.failedDbCallsMedian.getOrMissingString,
+        s.failedDbCallsStddev.getOrMissingString
+        )
+      )
 
   implicit val unitResultWrites: Writes[UnitResult] =
     ((__ \ "name").write[String] ~
