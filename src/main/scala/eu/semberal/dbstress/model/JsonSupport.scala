@@ -2,6 +2,7 @@ package eu.semberal.dbstress.model
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.Defaults._
+import eu.semberal.dbstress.model.Configuration.{UnitConfig, UnitRunConfig, DbCommunicationConfig}
 import eu.semberal.dbstress.model.Results._
 import org.joda.time.Duration
 import play.api.libs.functional.syntax._
@@ -80,12 +81,29 @@ object JsonSupport extends LazyLogging {
         )
       )
 
-  implicit val unitResultWrites: Writes[UnitResult] =
+  implicit val dbCommunicationConfigWrites: Writes[DbCommunicationConfig] =
+    ((__ \ "uri").write[String] ~
+      (__ \ "driverClass").write[String] ~
+      (__ \ "username").write[String] ~
+      (__ \ "password").write[String] ~
+      (__ \ "query").write[String] ~
+      (__ \ "connectionTimeout").write[Int] ~
+      (__ \ "queryTimeout").write[Int]) apply unlift(DbCommunicationConfig.unapply)
+
+  implicit val unitRunConfigWrites: Writes[UnitRunConfig] =
+    ((__ \ "databaseConfig").write[DbCommunicationConfig] ~
+      (__ \ "repeats").write[Int]) apply unlift(UnitRunConfig.unapply)
+
+  implicit val unitConfigWrites: Writes[UnitConfig] =
     ((__ \ "name").write[String] ~
+      (__ \ "description").write[String] ~
+      (__ \ "unitRunConfig").write[UnitRunConfig] ~
+      (__ \ "parallelConnections").write[Int]) apply unlift(UnitConfig.unapply)
+
+  implicit val unitResultWrites: Writes[UnitResult] =
+    ((__ \ "configuation").write[UnitConfig] ~
       (__ \ "unitSummary").write[UnitSummary] ~
-      (__ \ "unitRuns").write[List[UnitRunResult]]) apply { r =>
-      (r.unitConfig.name, r.summary, r.unitRunResults)
-    }
+      (__ \ "unitRuns").write[List[UnitRunResult]]) apply (r => (r.unitConfig, r.summary, r.unitRunResults))
 
   private def toJsObject(stmtResult: StatementResult): JsObject = stmtResult match {
     case FetchedRows(n) => JsObject(Seq("fetchedRows" -> JsNumber(n)))
