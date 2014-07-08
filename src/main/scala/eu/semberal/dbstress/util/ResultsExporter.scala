@@ -4,10 +4,13 @@ import java.io.{BufferedWriter, File, FileWriter}
 
 import breeze.io.CSVWriter
 import com.typesafe.scalalogging.slf4j.LazyLogging
+import eu.semberal.dbstress.Defaults
 import eu.semberal.dbstress.model.JsonSupport._
 import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.util.ModelExtensions._
 import org.duh.resource._
+import org.joda.time.DateTime
+import org.joda.time.DateTime.now
 import play.api.libs.json.Json
 
 trait ResultsExporter {
@@ -15,15 +18,17 @@ trait ResultsExporter {
 
   def exportResults(dir: String, unitResults: List[UnitResult]): Unit = {
 
+    val curr = Defaults.filePathFriendlyDateTimeFormat.print(now())
+
     def writeCompleteJson(): Unit = {
-      for (b <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}complete.json")).auto) {
+      for (b <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}complete.$curr.json")).auto) {
         val out = Json.prettyPrint(Json.toJson(unitResults))
         b.write(out)
       }
     }
 
     def writeCsvSummary(): Unit = {
-      for (f <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}summary.csv")).auto) {
+      for (f <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}summary.$curr.csv")).auto) {
 
         val header = IndexedSeq("name", "description",
           "expectedDbCalls", "executedDbCalls", "notExecutedDbCalls", "successfulDbCalls", "failedDbCalls",
