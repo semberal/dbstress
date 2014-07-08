@@ -8,7 +8,7 @@ import eu.semberal.dbstress.actor.UnitRunActor._
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
 
-class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LazyLogging with FSM[State, Option[UnitRunResult]] {
+class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[UnitRunResult]] {
 
   private val DbCommunicationActorName = "dbCommunicationActor"
 

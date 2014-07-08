@@ -4,7 +4,7 @@ import java.sql.{Connection, DriverManager}
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeoutException
 
-import akka.actor.{Actor, FSM}
+import akka.actor.{Actor, LoggingFSM}
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.DbCommunicationActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
@@ -17,7 +17,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, blocking}
 import scala.util.{Failure, Success}
 
-class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with FSM[State, Option[Connection]] {
+class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[Connection]] {
 
   startWith(Uninitialized, None)
 

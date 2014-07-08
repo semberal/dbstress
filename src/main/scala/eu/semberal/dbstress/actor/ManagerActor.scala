@@ -9,7 +9,7 @@ import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.util.ResultsExporter
 
-class ManagerActor(scenario: Scenario, terminator: ActorRef) extends Actor with LazyLogging with ResultsExporter with FSM[State, Data] {
+class ManagerActor(scenario: Scenario, terminator: ActorRef) extends Actor with LazyLogging with ResultsExporter with LoggingFSM[State, Data] {
 
   startWith(Uninitialized, No)
 

@@ -8,7 +8,7 @@ import eu.semberal.dbstress.actor.UnitRunActor.{InitUnitRun, StartUnitRun}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
 
-class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with FSM[State, Data] {
+class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with LoggingFSM[State, Data] {
 
   startWith(Uninitialized, No)
 
