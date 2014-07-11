@@ -1,3 +1,6 @@
 import breeze.linalg.DenseVector
 
-breeze.stats.median(DenseVector(List(0.1, 1.1, 3.2): _*))
+val vector = DenseVector(Array(1, 2, 3, 5))
+
+
+breeze.stats.median(vector)

@@ -43,8 +43,7 @@ object Results {
       val successes = flattened.collect({ case e: DbCallSuccess => e})
       val failures = flattened.collect({ case e: DbCallFailure => e})
 
-      /* todo The conversion to double is ugly here. Take a loot at breeze how to handle longs */
-      val durationFunction: DbCallResult => Double = x => new Duration(x.start, x.finish).getMillis.toDouble
+      val durationFunction: DbCallResult => Long = x => new Duration(x.start, x.finish).getMillis
 
       val expectedDbCalls = unitConfig.parallelConnections * unitConfig.config.repeats
       val executedDbCalls = flattened.length
@@ -70,18 +69,19 @@ object Results {
     }
   }
 
-  case class UnitSummary // todo will be necessary to split into multiple smaller case classes or use HList
+  /* todo will be necessary to split into multiple smaller case classes or use HList */
+  /* todo consider adding expected/successful/failed connections */
+  case class UnitSummary
   (
     expectedDbCalls: Int, executedDbCalls: Int, notExecutedDbCalls: Int, successfulDbCalls: Int, failedDbCalls: Int,
 
-    executedDbCallsMin: Option[Double], executedDbCallsMax: Option[Double], executedDbCallsMean: Option[Double],
-    executedDbCallsMedian: Option[Double], executedDbCallsStddev: Option[Double],
+    executedDbCallsMin: Option[Long], executedDbCallsMax: Option[Long], executedDbCallsMean: Option[Double],
+    executedDbCallsMedian: Option[Long], executedDbCallsStddev: Option[Double],
 
-    successfulDbCallsMin: Option[Double], successfulDbCallsMax: Option[Double], successfulDbCallsMean: Option[Double],
-    successfulDbCallsMedian: Option[Double], successfulDbCallsStddev: Option[Double],
+    successfulDbCallsMin: Option[Long], successfulDbCallsMax: Option[Long], successfulDbCallsMean: Option[Double],
+    successfulDbCallsMedian: Option[Long], successfulDbCallsStddev: Option[Double],
 
-    failedDbCallsMin: Option[Double], failedDbCallsMax: Option[Double], failedDbCallsMean: Option[Double],
-    failedDbCallsMedian: Option[Double], failedDbCallsStddev: Option[Double]
+    failedDbCallsMin: Option[Long], failedDbCallsMax: Option[Long], failedDbCallsMean: Option[Double],
+    failedDbCallsMedian: Option[Long], failedDbCallsStddev: Option[Double]
     )
-
 }

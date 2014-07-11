@@ -28,7 +28,8 @@ libraryDependencies ++= {
     "org.slf4j" % "slf4j-api" % "1.7.7", // todo remove?
     "org.scalanlp" %% "breeze" % "0.8.1",
     "com.typesafe.play" %% "play-json" % "2.3.1",
-    "joda-time" % "joda-time" % "2.3"
+    "joda-time" % "joda-time" % "2.3",
+    "org.scalaz" %% "scalaz-core" % "7.0.6"
   )
 }
 
