@@ -42,3 +42,5 @@ testScalaStyle := {
 }
 
 (test in Test) <<= (test in Test) dependsOn testScalaStyle
+
+XitrumPackage.copy("bin", "LICENSE.txt", "README.md")
