@@ -41,36 +41,23 @@ object JsonSupport extends LazyLogging {
       (__ \ "callResults").write[Seq[DbCallResult]]) apply unlift(UnitRunResult.unapply)
 
 
-  implicit val foo: Writes[UnitSummary] = new Writes[UnitSummary] {
-
-    override def writes(o: UnitSummary): JsValue =
-
+  implicit val statsWrites: Writes[StatsResults] = new Writes[StatsResults] {
+    override def writes(o: StatsResults): JsValue =
       JsObject(Seq(
-        "expectedDbCalls" -> JsNumber(o.expectedDbCalls),
-        "executedDbCalls" -> JsNumber(o.executedDbCalls),
-        "notExecutedDbCalls" -> JsNumber(o.notExecutedDbCalls),
-        "successfulDbCalls" -> JsNumber(o.successfulDbCalls),
-        "failedDbCalls" -> JsNumber(o.failedDbCalls),
-
-        "executedDbCallsMin" -> o.executedDbCallsMin.getJsNumber,
-        "executedDbCallsMax" -> o.executedDbCallsMax.getJsNumber,
-        "executedDbCallsMean" -> o.executedDbCallsMean.getJsNumber,
-        "executedDbCallsMedian" -> o.executedDbCallsMedian.getJsNumber,
-        "executedDbCallsStddev" -> o.executedDbCallsStddev.getJsNumber,
-
-        "successfulDbCallsMin" -> o.successfulDbCallsMin.getJsNumber,
-        "successfulDbCallsMax" -> o.successfulDbCallsMax.getJsNumber,
-        "successfulDbCallsMean" -> o.successfulDbCallsMean.getJsNumber,
-        "successfulDbCallsMedian" -> o.successfulDbCallsMedian.getJsNumber,
-        "successfulDbCallsStddev" -> o.successfulDbCallsStddev.getJsNumber,
-
-        "failedDbCallsMin" -> o.failedDbCallsMin.getJsNumber,
-        "failedDbCallsMax" -> o.failedDbCallsMax.getJsNumber,
-        "failedDbCallsMean" -> o.failedDbCallsMean.getJsNumber,
-        "failedDbCallsMedian" -> o.failedDbCallsMedian.getJsNumber,
-        "failedDbCallsStddev" -> o.failedDbCallsStddev.getJsNumber
+        "count" -> JsNumber(o.count),
+        "min" -> o.min.getJsNumber,
+        "max" -> o.max.getJsNumber,
+        "mean" -> o.mean.getJsNumber,
+        "median" -> o.mean.getJsNumber,
+        "stddev" -> o.stddev.getJsNumber
       ))
   }
+
+  implicit val unitSummaryWrites: Writes[UnitSummary] =
+    ((__ \ "expectedDbCalls").write[Int] ~
+      (__ \ "dbCalls" \ "executed").write[StatsResults] ~
+      (__ \ "dbCalls" \ "executed" \ "successful").write[StatsResults] ~
+      (__ \ "dbCalls" \ "executed" \ "failed").write[StatsResults]) apply unlift(UnitSummary.unapply)
 
   implicit val dbCommunicationConfigWrites: Writes[DbCommunicationConfig] =
     ((__ \ "uri").write[String] ~
