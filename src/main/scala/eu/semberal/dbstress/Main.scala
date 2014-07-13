@@ -53,7 +53,7 @@ object Main extends LazyLogging {
           val terminator = system.actorOf(Props[TerminatorActor], "terminator")
           val resultsExporter = system.actorOf(Props(classOf[ResultsExporterActor], config.outputDir), "resultsExporter")
           val manager = system.actorOf(Props(classOf[ManagerActor], sc, resultsExporter, terminator), "manager")
-          logger.debug("Starting scenario")
+          logger.info("Starting the scenario")
           manager ! RunScenario
       }
     }

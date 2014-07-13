@@ -23,6 +23,7 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
 
   when(Uninitialized) {
     case Event(RunScenario, _) =>
+      logger.info("Starting units initialization")
       scenario.units.foreach(u => {
         context.actorOf(Props(classOf[UnitActor], u), u.name) ! InitUnit
       })
@@ -30,11 +31,14 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
   }
 
   when(InitConfirmationsWait) {
-    case Event(UnitInitialized(_), RemainingInitUnitConfirmations(n)) =>
+    case Event(UnitInitialized(name), RemainingInitUnitConfirmations(n)) =>
+
       if (n == 1) {
+        logger.info(s"""Initialization of all units has completed, starting the unit runs (db calls)""")
         context.children.foreach(_ ! StartUnit)
         goto(ResultWait) using CollectedUnitResults(Nil)
       } else {
+        logger.info(s"""Unit "$name" initialization has finished, ${n - 1} more to go""")
         stay() using RemainingInitUnitConfirmations(n - 1)
       }
   }
@@ -42,13 +46,14 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
   when(ResultWait) {
     case Event(UnitFinished(unitResult), CollectedUnitResults(l)) =>
       val newUnitResults: List[UnitResult] = unitResult :: l
-      logger.info( s"""Unit "${unitResult.unitConfig.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
+
       if (newUnitResults.size == scenario.units.size) {
-        logger.info("All units have successfully finished, exporting the results")
+        logger.info("All units have successfully finished")
 
         implicit val executionContext = context.system.dispatcher // todo another execution context?
         implicit val timeout = Timeout(exportResultsTimeout, MILLISECONDS)
 
+        logger.info("Exporting the results")
         val exportFuture = resultsExporter ? ExportResults(newUnitResults)
 
         exportFuture.onComplete {
@@ -62,6 +67,7 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
 
         stay() // todo stay here?
       } else {
+        logger.info(s"""Unit "${unitResult.unitConfig.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
         stay() using CollectedUnitResults(newUnitResults)
       }
   }
