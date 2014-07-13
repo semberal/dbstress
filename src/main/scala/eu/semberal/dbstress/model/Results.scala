@@ -50,7 +50,6 @@ object Results {
 
   /* todo consider adding expected/successful/failed connections */
   case class UnitSummary(expectedDbCalls: Int, executedDbCallsSummary: StatsResults,
-                         successfulSbCallsSummary: StatsResults, failedDbCallsSummary: StatsResults)
+                         successfulDbCallsSummary: StatsResults, failedDbCallsSummary: StatsResults)
 
 }
-
