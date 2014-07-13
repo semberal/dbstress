@@ -1,9 +1,12 @@
 package eu.semberal.dbstress.model
 
+import java.io.File
+
 object Configuration {
 
-  /* Configuration object*/
-  case class Scenario(units: Seq[UnitConfig])
+  case class UserConfiguration(configFile: File, outputDir: File)
+
+  case class ScenarioConfig(units: Seq[UnitConfig])
 
   case class UnitConfig(name: String, description: String, config: UnitRunConfig, parallelConnections: Int)
 

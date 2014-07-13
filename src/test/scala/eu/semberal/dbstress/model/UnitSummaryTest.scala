@@ -14,10 +14,9 @@ class UnitSummaryTest extends FlatSpec with Matchers {
 
   it should "correctly calculate summary information" in {
     summary.expectedDbCalls should be(10)
-    summary.executedDbCalls should be(2)
-    summary.notExecutedDbCalls should be(8)
-    summary.successfulDbCalls should be(1)
-    summary.failedDbCalls should be(1)
+    summary.executedDbCallsSummary.count should be(2)
+    summary.successfulSbCallsSummary.count should be(1)
+    summary.failedDbCallsSummary.count should be(1)
   }
 }
 

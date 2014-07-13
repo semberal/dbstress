@@ -6,7 +6,7 @@ uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
 password: ""
-parallel_connections: 2
+parallel_connections: as2
 repeats: 5
 connection_timeout: 500
 query_timeout: 500

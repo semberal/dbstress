@@ -29,7 +29,8 @@ libraryDependencies ++= {
     "org.scalanlp" %% "breeze" % "0.8.1",
     "com.typesafe.play" %% "play-json" % "2.3.1",
     "joda-time" % "joda-time" % "2.3",
-    "org.scalaz" %% "scalaz-core" % "7.0.6"
+    "org.scalaz" %% "scalaz-core" % "7.0.6",
+    "com.github.scopt" %% "scopt" % "3.2.0"
   )
 }
 
