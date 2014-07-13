@@ -53,3 +53,4 @@ object Results {
                          successfulSbCallsSummary: StatsResults, failedDbCallsSummary: StatsResults)
 
 }
+

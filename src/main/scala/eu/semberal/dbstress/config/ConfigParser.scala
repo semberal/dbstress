@@ -9,68 +9,59 @@ import org.yaml.snakeyaml.Yaml
 
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
-import scala.util.{Success, Try}
 
 object ConfigParser {
+
+  private def sequence[A, B](s: Seq[Either[A, B]]): Either[A, Seq[B]] =
+    s.foldRight(Right(Nil): Either[A, List[B]]) {
+      (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
+    }
 
   /*
   * todo Ensure unique unit name (actor have the same name => must be unique)
   * todo Values validation (e.g. repeats > 0, ...)
   */
-  def parseConfigurationYaml(f: File): Try[ScenarioConfig] = {
+  def parseConfigurationYaml(f: File): Either[String, ScenarioConfig] = {
     val yaml = new Yaml
     val units = for (reader <- new BufferedReader(new FileReader(f)).auto) yield {
       yaml.loadAll(reader).map(x => Map(x.asInstanceOf[JMap[String, Object]].toList: _*))
-    }.map(map => {
-      val uri = map("uri").asInstanceOf[String]
+    }.map { map =>
+      for {
+        uri <- loadFromMap[String](map, "uri")()().right
+        driverClass <- loadFromMap[String](map, "driver_class")()().right
+        username <- loadFromMap[String](map, "username")()().right
+        password <- loadFromMap[String](map, "password")()().right
+        query <- loadFromMap[String](map, "query")()().right
+        connectionTimeout <- loadFromMap[java.lang.Integer](map, "connection_timeout")()().right
+        queryTimeout <- loadFromMap[java.lang.Integer](map, "query_timeout")()().right
 
-      val driverClass = loadFromMapWithCheck[String](map, "driver_class")
-      val username = loadFromMapWithCheck[String](map, "username")
-      val password = loadFromMapWithCheck[String](map, "password")
-      val query = loadFromMapWithCheck[String](map, "query")
-      val connectionTimeout = loadFromMapWithCheck[Int](map, "connection_timeout")
-      val queryTimeout = loadFromMapWithCheck[Int](map, "query_timeout")
+        repeats <- loadFromMap[java.lang.Integer](map, "repeats")()().right
 
-      val repeats = loadFromMapWithCheck[Int](map, "repeats")
+        unitName <- loadFromMap[String](map, "unit_name")()().right
+        description <- loadFromMap[String](map, "description")()().right
+        parallelConnections <- loadFromMap[java.lang.Integer](map, "parallel_connections")()().right
+      } yield {
+        val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query,
+          connectionTimeout, queryTimeout)
 
-      val unitName = loadFromMapWithCheck[String](map, "unit_name")
-      val description = loadFromMapWithCheck[String](map, "description")
-      val parallelConnections = loadFromMapWithCheck[String](map, "parallel_connections")
+        val unitConfig = UnitRunConfig(dbConfig, repeats)
 
-      val s = List(driverClass, username, password, query, connectionTimeout, queryTimeout) ++
-        List(repeats) ++ List(unitName, description, parallelConnections)
+        UnitConfig(unitName, description, unitConfig, parallelConnections)
+      }
+    }.toList
 
-      import scalaz._
-      import Scalaz._
-
-      val s1 = s.sequenceU // todo check if is correct
-
-      val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query,
-        connectionTimeout, queryTimeout)
-
-
-
-
-      val unitConfig = UnitRunConfig(dbConfig, repeats)
-
-
-
-      UnitConfig(unitName, description, unitConfig, parallelConnections)
-    }).toList
-
-    Success(ScenarioConfig(units))
-
+    sequence(units).right.map(ScenarioConfig)
   }
 
-
-  def loadFromMapWithCheck[T: ClassTag](map: Map[String, Any], key: String): Either[String, T] = {
+  def loadFromMap[T: ClassTag](map: Map[String, Any], key: String)
+                              (validation: T => Boolean = (_: T) => true)
+                              (validationMsg: String = ""): Either[String, T] = {
     val rtc = implicitly[ClassTag[T]].runtimeClass
     map.get(key) match {
       case None => Left(s"Configuration property $key is missing")
-      case Some(x) if rtc.isInstance(x) =>
-        Right(x.asInstanceOf[T])
-      case Some(x) =>
-        Left(s"Value x does conform to the expected type $rtc")
+      case Some(x) if !rtc.isInstance(x) => Left(s"Value $x does conform to the expected type $rtc")
+      case Some(x: T) if !validation(x) => Left(validationMsg)
+      case Some(x: T) => Right(x)
     }
   }
 }

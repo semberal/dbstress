@@ -6,4 +6,6 @@ object Defaults {
   val dateTimeFormat = ISODateTimeFormat.dateTime()
   val filePathFriendlyDateTimeFormat = DateTimeFormat.forPattern("yyyyMMdd_HHmmss")
 
+  val exportResultsTimeout = 10000
+
 }

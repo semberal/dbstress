@@ -40,17 +40,22 @@ object Main extends LazyLogging {
       version("version").text("Show application version")
       help("help").text("Show help")
 
-      override def showUsageOnError = true
+      override def showUsageOnError: Boolean = true
     }
 
     parser.parse(args, CmdLingArgumentsConfig()).map { config =>
       val system = ActorSystem()
-      val sc = parseConfigurationYaml(config.configFile)
-      val terminator = system.actorOf(Props[TerminatorActor], "terminator")
-      val resultsExporter = system.actorOf(Props(classOf[ResultsExporterActor], config.outputDir), "resultsExporter")
-      val manager = system.actorOf(Props(classOf[ManagerActor], sc, resultsExporter, terminator), "manager")
-      logger.debug("Starting scenario")
-      manager ! RunScenario
+      parseConfigurationYaml(config.configFile) match {
+        case Left(msg) =>
+          System.err.println(s"Configuration error: $msg")
+          System.exit(2)
+        case Right(sc) =>
+          val terminator = system.actorOf(Props[TerminatorActor], "terminator")
+          val resultsExporter = system.actorOf(Props(classOf[ResultsExporterActor], config.outputDir), "resultsExporter")
+          val manager = system.actorOf(Props(classOf[ManagerActor], sc, resultsExporter, terminator), "manager")
+          logger.debug("Starting scenario")
+          manager ! RunScenario
+      }
     }
   }
 }

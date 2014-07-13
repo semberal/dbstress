@@ -8,7 +8,9 @@ scalaVersion := "2.10.4"
 
 resolvers ++= Seq(
   "duh.org sonatype oss repo" at "https://oss.sonatype.org/content/repositories/orgduh-1000/",
-  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
+  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
+  "Sonatype OSS Releases" at "http://oss.sonatype.org/content/repositories/releases/",
+  "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 )
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
@@ -17,7 +19,7 @@ libraryDependencies ++= {
   val akkaVersion = "2.3.4"
   Seq(
     "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-    "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
+    "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test",
     "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
     "org.yaml" % "snakeyaml" % "1.13",
     "org.scalatest" %% "scalatest" % "2.2.0" % "test",
@@ -29,7 +31,6 @@ libraryDependencies ++= {
     "org.scalanlp" %% "breeze" % "0.8.1",
     "com.typesafe.play" %% "play-json" % "2.3.1",
     "joda-time" % "joda-time" % "2.3",
-    "org.scalaz" %% "scalaz-core" % "7.0.6",
     "com.github.scopt" %% "scopt" % "3.2.0"
   )
 }

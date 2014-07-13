@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit.MILLISECONDS
 import akka.actor._
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.LazyLogging
+import eu.semberal.dbstress.Defaults
+import eu.semberal.dbstress.Defaults.exportResultsTimeout
 import eu.semberal.dbstress.actor.ManagerActor._
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
 import eu.semberal.dbstress.actor.TerminatorActor.ScenarioCompleted
@@ -45,7 +47,7 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
         logger.info("All units have successfully finished, exporting the results")
 
         implicit val executionContext = context.system.dispatcher // todo another execution context?
-        implicit val timeout = Timeout(10000, MILLISECONDS) // todo configurable?
+        implicit val timeout = Timeout(exportResultsTimeout, MILLISECONDS)
 
         val exportFuture = resultsExporter ? ExportResults(newUnitResults)
 
