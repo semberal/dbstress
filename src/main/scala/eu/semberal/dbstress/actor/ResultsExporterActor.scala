@@ -7,7 +7,7 @@ import eu.semberal.dbstress.Defaults
 import eu.semberal.dbstress.actor.ManagerActor.ResultsExported
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
 import eu.semberal.dbstress.model.Results.UnitResult
-import org.duh.resource._
+import resource._
 import org.joda.time.DateTime._
 import play.api.libs.json.Json
 import eu.semberal.dbstress.model.JsonSupport._
@@ -22,13 +22,13 @@ class ResultsExporterActor(outputDir: File) extends Actor {
         writeCompleteJson(unitResults)
         sender ! ResultsExported
       } catch {
-        case e: Throwable => sender ! Status.Failure(e)
+        case e: Throwable => sender ! Status.Failure(e) // todo unit test it results in future failure
       }
 
   }
 
   def writeCompleteJson(unitResults: List[UnitResult]): Unit = {
-    for (b <- new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}complete.$curr.json")).auto) {
+    for (b <- managed(new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}complete.$curr.json")))) {
       val out = Json.prettyPrint(Json.toJson(unitResults))
       b.write(out)
     }

@@ -2,6 +2,7 @@ package eu.semberal.dbstress.util
 
 import breeze.linalg.DenseVector
 import play.api.libs.json.{JsNull, JsNumber, JsValue}
+import resource.{ExtractableManagedResource, ManagedResource}
 
 object ModelExtensions {
 
@@ -32,6 +33,14 @@ object ModelExtensions {
 
   implicit class NullableJsonValue[T <% BigDecimal](value: Option[T]) {
     def getJsNumber: JsValue = value.map(JsNumber(_)).getOrElse(JsNull)
+  }
+
+  implicit class ArmManagedResource[T](o: ExtractableManagedResource[T]) {
+    def getOrThrow: T = o.either match {
+      case Left(x :: xs) => throw x
+      case Left(_) => throw new IllegalStateException("Resource operation failed, but no exceptions are reported")
+      case Right(value) => value
+    }
   }
 
 }

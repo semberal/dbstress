@@ -4,11 +4,12 @@ import java.io.{BufferedReader, File, FileReader}
 import java.util.{Map => JMap}
 
 import eu.semberal.dbstress.model.Configuration._
-import org.duh.resource._
+import resource._
 import org.yaml.snakeyaml.Yaml
 
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
+import eu.semberal.dbstress.util.ModelExtensions._
 
 object ConfigParser {
 
@@ -23,9 +24,9 @@ object ConfigParser {
   */
   def parseConfigurationYaml(f: File): Either[String, ScenarioConfig] = {
     val yaml = new Yaml
-    val units = for (reader <- new BufferedReader(new FileReader(f)).auto) yield {
+    val units = managed(new BufferedReader(new FileReader(f))).map { reader =>
       yaml.loadAll(reader).map(x => Map(x.asInstanceOf[JMap[String, Object]].toList: _*))
-    }.map { map =>
+    }.getOrThrow.toList.map { map =>
       for {
         uri <- loadFromMap[String](map, "uri")()().right
         driverClass <- loadFromMap[String](map, "driver_class")()().right
@@ -48,7 +49,7 @@ object ConfigParser {
 
         UnitConfig(unitName, description, unitConfig, parallelConnections)
       }
-    }.toList
+    }
 
     sequence(units).right.map(ScenarioConfig)
   }

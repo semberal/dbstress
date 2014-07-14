@@ -6,13 +6,6 @@ version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.10.4"
 
-resolvers ++= Seq(
-  "duh.org sonatype oss repo" at "https://oss.sonatype.org/content/repositories/orgduh-1000/",
-  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
-  "Sonatype OSS Releases" at "http://oss.sonatype.org/content/repositories/releases/",
-  "Sonatype OSS Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
-)
-
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
 
 libraryDependencies ++= {
@@ -23,7 +16,7 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
     "org.yaml" % "snakeyaml" % "1.13",
     "org.scalatest" %% "scalatest" % "2.2.0" % "test",
-    "org.duh" %% "scala-resource-simple" % "0.3",
+    "com.jsuereth" %% "scala-arm" % "1.4",
     "com.h2database" % "h2" % "1.4.178",
     "ch.qos.logback" % "logback-classic" % "1.1.2" % "runtime",
     "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2",

@@ -10,8 +10,9 @@ import eu.semberal.dbstress.actor.DbCommunicationActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
-import org.duh.resource._
+import eu.semberal.dbstress.util.ModelExtensions.ArmManagedResource
 import org.joda.time.DateTime.now
+import resource._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, blocking}
@@ -51,7 +52,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
       val dbFuture: Future[StatementResult] = Future {
         connection.map { conn =>
           blocking {
-            for (statement <- conn.createStatement().auto) yield {
+            managed(conn.createStatement()).map({ statement =>
               if (statement.execute(dbConfig.query)) {
                 val resultSet = statement.getResultSet // todo support multiple result sets (statement#getMoreResults)
                 val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
@@ -59,7 +60,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
               } else {
                 UpdateCount(statement.getUpdateCount)
               }
-            }
+            }).getOrThrow
           }
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
