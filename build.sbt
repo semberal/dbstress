@@ -8,6 +8,10 @@ scalaVersion := "2.10.4"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
 
+resolvers ++= Seq(
+  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
+)
+
 libraryDependencies ++= {
   val akkaVersion = "2.3.4"
   Seq(
