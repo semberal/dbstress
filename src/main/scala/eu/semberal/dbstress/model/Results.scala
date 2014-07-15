@@ -37,16 +37,12 @@ object Results {
 
       val durationFunction: DbCallResult => Long = x => new Duration(x.start, x.finish).getMillis
 
-      val expectedDbCalls = unitConfig.parallelConnections * unitConfig.config.repeats
-
-      val executedDbCallsDurations = flattened map durationFunction
-      val successesDurations = successes map durationFunction
-      val failuresDurations = failures map durationFunction
-
-      UnitSummary(expectedDbCalls, StatsResults(executedDbCallsDurations),
-        StatsResults(successesDurations), StatsResults(failuresDurations))
+      UnitSummary(unitConfig.parallelConnections * unitConfig.config.repeats, StatsResults(flattened map durationFunction),
+        StatsResults(successes map durationFunction), StatsResults(failures map durationFunction))
     }
   }
+
+  case class ScenarioResult(unitResults: List[UnitResult])
 
   /* todo consider adding expected/successful/failed connections */
   case class UnitSummary(expectedDbCalls: Int, executedDbCallsSummary: StatsResults,

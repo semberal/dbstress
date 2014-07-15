@@ -4,6 +4,8 @@ import breeze.linalg.DenseVector
 import play.api.libs.json.{JsNull, JsNumber, JsValue}
 import resource.{ExtractableManagedResource, ManagedResource}
 
+import scala.util.{Success, Failure, Try}
+
 object ModelExtensions {
 
   implicit class StatisticalExtensions(l: List[Long]) {
@@ -36,10 +38,10 @@ object ModelExtensions {
   }
 
   implicit class ArmManagedResource[T](o: ExtractableManagedResource[T]) {
-    def getOrThrow: T = o.either match {
-      case Left(x :: xs) => throw x
-      case Left(_) => throw new IllegalStateException("Resource operation failed, but no exceptions are reported")
-      case Right(value) => value
+    def toTry: Try[T] = o.either match {
+      case Left(x :: xs) => Failure(x)
+      case Left(_) => Failure(new IllegalStateException("Resource operation failed, but no exceptions are reported"))
+      case Right(value) => Success(value)
     }
   }
 

@@ -6,7 +6,7 @@ import akka.actor.{Status, Actor}
 import eu.semberal.dbstress.Defaults
 import eu.semberal.dbstress.actor.ManagerActor.ResultsExported
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
-import eu.semberal.dbstress.model.Results.UnitResult
+import eu.semberal.dbstress.model.Results.{ScenarioResult, UnitResult}
 import resource._
 import org.joda.time.DateTime._
 import play.api.libs.json.Json
@@ -17,7 +17,7 @@ class ResultsExporterActor(outputDir: File) extends Actor {
 
   override def receive: Receive = {
 
-    case ExportResults(unitResults) =>
+    case ExportResults(ScenarioResult(unitResults)) =>
       try {
         writeCompleteJson(unitResults)
         sender ! ResultsExported
@@ -72,7 +72,6 @@ class ResultsExporterActor(outputDir: File) extends Actor {
 
 object ResultsExporterActor {
 
-  case class ExportResults(unitResults: List[UnitResult])
+  case class ExportResults(scenarioResult: ScenarioResult)
 
-  // todo wrap in a case class
 }

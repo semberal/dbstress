@@ -54,7 +54,7 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
         implicit val timeout = Timeout(exportResultsTimeout, MILLISECONDS)
 
         logger.info("Exporting the results")
-        val exportFuture = resultsExporter ? ExportResults(newUnitResults)
+        val exportFuture = resultsExporter ? ExportResults(ScenarioResult(newUnitResults))
 
         exportFuture.onComplete {
           case Success(_) =>

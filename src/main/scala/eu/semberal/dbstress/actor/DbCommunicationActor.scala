@@ -60,7 +60,10 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
               } else {
                 UpdateCount(statement.getUpdateCount)
               }
-            }).getOrThrow
+            }).toTry match {
+              case Success(x) => x
+              case Failure(e) => throw e
+            }
           }
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
