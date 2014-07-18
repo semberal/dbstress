@@ -17,7 +17,9 @@ import akka.pattern.ask
 
 import scala.util.{Failure, Success}
 
-class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminator: ActorRef) extends Actor with LazyLogging with LoggingFSM[State, Data] {
+class ManagerActor(scenario: ScenarioConfig,
+                   resultsExporter: ActorRef,
+                   terminator: ActorRef) extends Actor with LazyLogging with LoggingFSM[State, Data] {
 
   startWith(Uninitialized, No)
 
@@ -34,11 +36,11 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
     case Event(UnitInitialized(name), RemainingInitUnitConfirmations(n)) =>
 
       if (n == 1) {
-        logger.info(s"""Initialization of all units has completed, starting the unit runs (db calls)""")
+        logger.info( s"""Initialization of all units has completed, starting the unit runs (db calls)""")
         context.children.foreach(_ ! StartUnit)
         goto(ResultWait) using CollectedUnitResults(Nil)
       } else {
-        logger.info(s"""Unit "$name" initialization has finished, ${n - 1} more to go""")
+        logger.info( s"""Unit "$name" initialization has finished, ${n - 1} more to go""")
         stay() using RemainingInitUnitConfirmations(n - 1)
       }
   }
@@ -50,27 +52,24 @@ class ManagerActor(scenario: ScenarioConfig, resultsExporter: ActorRef, terminat
       if (newUnitResults.size == scenario.units.size) {
         logger.info("All units have successfully finished")
 
-        implicit val executionContext = context.system.dispatcher // todo another execution context?
+        implicit val executionContext = context.system.dispatcher
         implicit val timeout = Timeout(exportResultsTimeout, MILLISECONDS)
 
         logger.info("Exporting the results")
         val exportFuture = resultsExporter ? ExportResults(ScenarioResult(newUnitResults))
 
-        exportFuture.onComplete {
-          case Success(_) =>
-            logger.info("Results have been successfully exported")
-            terminator ! ScenarioCompleted
-          case Failure(e) =>
-            logger.warn("An error while exporting results has occurred", e)
-            terminator ! ScenarioCompleted
-        }
+        exportFuture.onSuccess { case _ => logger.info("Results have been successfully exported")}
+        exportFuture.onFailure { case e => logger.warn("An error while exporting results has occurred", e)}
+        exportFuture.onComplete(_ => terminator ! ScenarioCompleted)
 
-        stay() // todo stay here?
+        goto(TerminationWait) using No
       } else {
-        logger.info(s"""Unit "${unitResult.unitConfig.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
+        logger.info( s"""Unit "${unitResult.unitConfig.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
         stay() using CollectedUnitResults(newUnitResults)
       }
   }
+
+  when(TerminationWait)(Map.empty) // just to make work transition to the TerminationWait state
 
   initialize()
 }
@@ -92,6 +91,8 @@ object ManagerActor {
   protected case object InitConfirmationsWait extends State
 
   protected case object ResultWait extends State
+
+  protected case object TerminationWait extends State
 
   protected sealed trait Data
 

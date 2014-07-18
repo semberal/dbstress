@@ -2,20 +2,24 @@ package eu.semberal.dbstress.model
 
 import eu.semberal.dbstress.model.Configuration.UnitConfig
 import org.joda.time.{DateTime, Duration}
-import eu.semberal.dbstress.util.ModelExtensions._
 
 object Results {
 
-  sealed trait DbConnInitResult
+  trait OperationResult {
+    val start: DateTime
+
+    val finish: DateTime
+
+    lazy val duration = new Duration(start, finish).getMillis
+  }
+
+  sealed trait DbConnInitResult extends OperationResult
 
   case class DbConnInitSuccess(start: DateTime, finish: DateTime) extends DbConnInitResult
 
   case class DbConnInitFailure(start: DateTime, finish: DateTime, e: Throwable) extends DbConnInitResult
 
-  sealed trait DbCallResult {
-    val start: DateTime
-    val finish: DateTime
-  }
+  sealed trait DbCallResult extends OperationResult
 
   case class DbCallSuccess(start: DateTime, finish: DateTime, stmtResult: StatementResult) extends DbCallResult
 
@@ -31,21 +35,41 @@ object Results {
 
   case class UnitResult(unitConfig: UnitConfig, unitRunResults: List[UnitRunResult]) {
     lazy val summary = {
-      val flattened: List[DbCallResult] = unitRunResults.flatMap(_.callResults)
-      val successes = flattened.collect({ case e: DbCallSuccess => e})
-      val failures = flattened.collect({ case e: DbCallFailure => e})
 
-      val durationFunction: DbCallResult => Long = x => new Duration(x.start, x.finish).getMillis
+      val allDbCalls = unitRunResults.flatMap(_.callResults)
+      val successfulDbCalls = allDbCalls.collect({ case e: DbCallSuccess => e})
+      val failedDbCalls = allDbCalls.collect({ case e: DbCallFailure => e})
 
-      UnitSummary(unitConfig.parallelConnections * unitConfig.config.repeats, StatsResults(flattened map durationFunction),
-        StatsResults(successes map durationFunction), StatsResults(failures map durationFunction))
+      val allConnInits = unitRunResults.map(_.connInitResult)
+      val successfulConnInits = allConnInits.collect({ case e: DbConnInitSuccess => e})
+      val failedConnInits = allConnInits.collect({ case e: DbConnInitFailure => e})
+
+      UnitSummary(
+        StatsResults(allConnInits.map(_.duration)),
+        StatsResults(successfulConnInits.map(_.duration)),
+        StatsResults(failedConnInits.map(_.duration)),
+
+        unitConfig.parallelConnections * unitConfig.config.repeats,
+
+        StatsResults(allDbCalls.map(_.duration)),
+        StatsResults(successfulDbCalls.map(_.duration)),
+        StatsResults(failedDbCalls.map(_.duration))
+      )
     }
   }
 
   case class ScenarioResult(unitResults: List[UnitResult])
 
-  /* todo consider adding expected/successful/failed connections */
-  case class UnitSummary(expectedDbCalls: Int, executedDbCallsSummary: StatsResults,
-                         successfulDbCallsSummary: StatsResults, failedDbCallsSummary: StatsResults)
+  case class UnitSummary
+  (
+    performedConnectionInitsSummary: StatsResults,
+    successfulConnectionInitsSummary: StatsResults,
+    failedConnectionInitsSummary: StatsResults,
+
+    expectedDbCalls: Int,
+
+    executedDbCallsSummary: StatsResults,
+    successfulDbCallsSummary: StatsResults,
+    failedDbCallsSummary: StatsResults)
 
 }

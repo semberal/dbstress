@@ -42,11 +42,13 @@ class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with Logg
       val newUnitRunResults = result :: l
       if (newUnitRunResults.length == unitConfig.parallelConnections) {
         context.parent ! UnitFinished(UnitResult(unitConfig, newUnitRunResults))
-        stay() // todo not elegant, work already done, should be stopped. Solve deadletters problem
+        goto(TerminationWait) using No
       } else {
         goto(UnitRunResultsWait) using CollectedUnitRunResults(newUnitRunResults)
       }
   }
+
+  when(TerminationWait)(Map.empty) // just to make work transition to the TerminationWait state
 
   initialize()
 }
@@ -70,6 +72,8 @@ object UnitActor {
   protected case object StartUnitWait extends State
 
   protected case object UnitRunResultsWait extends State
+
+  protected case object TerminationWait extends State
 
   protected sealed trait Data
 

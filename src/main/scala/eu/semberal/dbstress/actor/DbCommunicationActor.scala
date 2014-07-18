@@ -35,11 +35,11 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
       try {
         /* not ideal, but connection reference is needed to make the state transition */
         val connection = Await.result(f, Duration.create(dbConfig.connectionTimeout, MILLISECONDS))
-        logger.trace("Database connection has been successfully created")
+        logger.debug("Database connection has been successfully created")
         goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(start, now()))
       } catch {
         case e: Throwable => // todo unit tests
-          logger.trace("An error during connection initialization has occurred", e)
+          logger.debug("An error during connection initialization has occurred", e)
           stay() replying DbConnInitFinished(DbConnInitFailure(start, now(), e))
       }
   }
@@ -82,11 +82,11 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
   }
 
   onTermination {
-    case x@StopEvent(_, _, connection) => // todo unit test for closing the connection
-      logger.trace("Closing database connection")
+    case StopEvent(_, _, connection) => // todo unit test for closing the connection
+      logger.debug("Closing database connection")
       try {
         connection.foreach(_.close())
-        logger.trace("Database connection has been successfully closed")
+        logger.debug("Database connection has been successfully closed")
       } catch {
         case e: Throwable =>
           logger.warn("Unable to close a database connection", e)

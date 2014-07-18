@@ -4,10 +4,10 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.Defaults._
 import eu.semberal.dbstress.model.Configuration.{DbCommunicationConfig, UnitConfig, UnitRunConfig}
 import eu.semberal.dbstress.model.Results._
+import eu.semberal.dbstress.util.ModelExtensions._
 import org.joda.time.Duration
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import eu.semberal.dbstress.util.ModelExtensions._
 
 object JsonSupport extends LazyLogging {
 
@@ -48,16 +48,22 @@ object JsonSupport extends LazyLogging {
         "min" -> o.min.getJsNumber,
         "max" -> o.max.getJsNumber,
         "mean" -> o.mean.getJsNumber,
-        "median" -> o.mean.getJsNumber,
+        "median" -> o.median.getJsNumber,
         "stddev" -> o.stddev.getJsNumber
       ))
   }
 
   implicit val unitSummaryWrites: Writes[UnitSummary] =
-    ((__ \ "expectedDbCalls").write[Int] ~
+    ((__ \ "connInits" \ "executed").write[StatsResults] ~
+      (__ \ "connInits" \ "executed" \ "successful").write[StatsResults] ~
+      (__ \ "connInits" \ "executed" \ "failed").write[StatsResults] ~
+
+      (__ \ "expectedDbCalls").write[Int] ~
+
       (__ \ "dbCalls" \ "executed").write[StatsResults] ~
       (__ \ "dbCalls" \ "executed" \ "successful").write[StatsResults] ~
-      (__ \ "dbCalls" \ "executed" \ "failed").write[StatsResults]) apply unlift(UnitSummary.unapply)
+      (__ \ "dbCalls" \ "executed" \ "failed").write[StatsResults]
+      ) apply unlift(UnitSummary.unapply)
 
   implicit val dbCommunicationConfigWrites: Writes[DbCommunicationConfig] =
     ((__ \ "uri").write[String] ~
@@ -82,6 +88,14 @@ object JsonSupport extends LazyLogging {
     ((__ \ "configuation").write[UnitConfig] ~
       (__ \ "unitSummary").write[UnitSummary] ~
       (__ \ "unitRuns").write[List[UnitRunResult]]) apply (r => (r.unitConfig, r.summary, r.unitRunResults))
+
+  implicit val scenarioResultWrites: Writes[ScenarioResult] = new Writes[ScenarioResult] {
+    override def writes(o: ScenarioResult): JsValue = JsObject(Seq(
+      "scenarioResult" -> JsObject(Seq(
+        "unitResults" -> Json.toJson(o.unitResults)
+      ))
+    ))
+  }
 
   private def toJsObject(stmtResult: StatementResult): JsObject = stmtResult match {
     case FetchedRows(n) => JsObject(Seq("fetchedRows" -> JsNumber(n)))

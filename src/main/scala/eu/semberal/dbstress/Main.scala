@@ -7,14 +7,15 @@ import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.ManagerActor.RunScenario
 import eu.semberal.dbstress.actor.{ManagerActor, ResultsExporterActor, TerminatorActor}
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
+import eu.semberal.dbstress.model.Configuration.ScenarioConfig
 import scopt.OptionParser
 
 object Main extends LazyLogging {
 
-  case class CmdLingArgumentsConfig(configFile: File = null, outputDir: File = null)
+  case class CmdLineArguments(configFile: File = null, outputDir: File = null)
 
   def main(args: Array[String]): Unit = {
-    val parser = new OptionParser[CmdLingArgumentsConfig]("dbstress") {
+    val parser = new OptionParser[CmdLineArguments]("dbstress") {
       private val version = Option(getClass.getPackage.getImplementationVersion).getOrElse("unknown")
 
       head("dbstress", version, "Database performance and stress testing tool")
@@ -43,19 +44,9 @@ object Main extends LazyLogging {
       override def showUsageOnError: Boolean = true
     }
 
-    parser.parse(args, CmdLingArgumentsConfig()).map { config =>
-      val system = ActorSystem()
-      parseConfigurationYaml(config.configFile) match {
-        case Left(msg) =>
-          System.err.println(s"Configuration error: $msg")
-          System.exit(2)
-        case Right(sc) =>
-          val terminator = system.actorOf(Props[TerminatorActor], "terminator")
-          val resultsExporter = system.actorOf(Props(classOf[ResultsExporterActor], config.outputDir), "resultsExporter")
-          val manager = system.actorOf(Props(classOf[ManagerActor], sc, resultsExporter, terminator), "manager")
-          logger.info("Starting the scenario")
-          manager ! RunScenario
-      }
+    parser.parse(args, CmdLineArguments()) match {
+      case Some(x) => new Orchestrator(x).runScenario()
+      case None => System.exit(1)
     }
   }
 }

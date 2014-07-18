@@ -17,9 +17,9 @@ class ResultsExporterActor(outputDir: File) extends Actor {
 
   override def receive: Receive = {
 
-    case ExportResults(ScenarioResult(unitResults)) =>
+    case ExportResults(sr: ScenarioResult) =>
       try {
-        writeCompleteJson(unitResults)
+        writeCompleteJson(sr)
         sender ! ResultsExported
       } catch {
         case e: Throwable => sender ! Status.Failure(e) // todo unit test it results in future failure
@@ -27,15 +27,16 @@ class ResultsExporterActor(outputDir: File) extends Actor {
 
   }
 
-  def writeCompleteJson(unitResults: List[UnitResult]): Unit = {
+  def writeCompleteJson(scenarioResult: ScenarioResult): Unit = {
     for (b <- managed(new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}complete.$curr.json")))) {
-      val out = Json.prettyPrint(Json.toJson(unitResults))
+      val out = Json.prettyPrint(Json.toJson(scenarioResult))
       b.write(out)
     }
   }
 
   def writeCsvSummary(): Unit = {
     // todo implement
+    // todo show unit configuration next to the description
     //      for (f <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}summary.$curr.csv")).auto) {
     //
     //        val header = IndexedSeq("name", "description",
