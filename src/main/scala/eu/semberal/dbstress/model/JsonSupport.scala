@@ -85,7 +85,7 @@ object JsonSupport extends LazyLogging {
       (__ \ "parallelConnections").write[Int]) apply unlift(UnitConfig.unapply)
 
   implicit val unitResultWrites: Writes[UnitResult] =
-    ((__ \ "configuation").write[UnitConfig] ~
+    ((__ \ "configuration").write[UnitConfig] ~
       (__ \ "unitSummary").write[UnitSummary] ~
       (__ \ "unitRuns").write[List[UnitRunResult]]) apply (r => (r.unitConfig, r.summary, r.unitRunResults))
 

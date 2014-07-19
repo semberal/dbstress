@@ -19,7 +19,7 @@ class JsonSupportTest extends FlatSpec with Matchers {
   }
 
   it should "correctly serialize the DbCallSuccess model object with fetched rows" in {
-    val model = DbCallSuccess(start, end, FetchedRows(77))
+    val model = DbCallSuccess(start, end, FetchedRows(10))
     toJson(model) should be(expectedDbCallSuccessWithFetchedRows)
   }
 
@@ -62,24 +62,20 @@ class JsonSupportTest extends FlatSpec with Matchers {
   }
 
   it should "correctly serialize the UnitRunResult model object with non-empty DbCallResults" in {
-    val model = UnitRunResult(DbConnInitSuccess(start, end), List(DbCallSuccess(start, end, UpdateCount(12)),
-      DbCallSuccess(start, end, FetchedRows(77)), DbCallFailure(start, end, ex)))
-    toJson(model) should be(expectedUnitRunResult)
+
+    toJson(unitRunResult) should be(expectedUnitRunResult)
   }
 
   it should "correctly serialize the UnitResult model object" in {
-    toJson(unitResult)
+    toJson(unitResult) should be(expectedUnitResult)
   }
 
-  ignore should "correctly serialize the UnitSummary model object" in { // todo fix test
-    val expected = JsObject(Seq(
-      "expectedDbCalls" -> JsNumber(55),
-      "executedDbCalls" -> JsNumber(2),
-      "notExecutedDbCalls" -> JsNumber(53),
-      "successfulDbCalls" -> JsNumber(1),
-      "failedDbCalls" -> JsNumber(1)
-    ))
-    toJson(unitResult.summary) should be(expected)
+  it should "correctly serialize UnitConfiguration model object" in {
+    toJson(unitConfig) should be(expectedUnitConfig)
+  }
+
+  it should "correctly serialize the UnitSummary model object" in {
+    toJson(unitResult.summary) should be(expectedUnitSummary)
   }
 }
 
@@ -94,15 +90,15 @@ object JsonSupportTest {
   val endStr = "2010-05-18T15:32:34.731+02:00"
   val repeats = 11
   val parallel = 5
+  val unitName = "unit1"
+  val unitDescription = "This is unit1"
 
-  val unitResult = {
-    val dbCommunicationConfig = DbCommunicationConfig("A", "B", "C", "D", "E", 10, 10)
-    val unitRunResults = UnitRunResult(DbConnInitSuccess(start, end), List(
-      DbCallSuccess(start, end, FetchedRows(10)),
-      DbCallFailure(start, end, new RuntimeException)
-    ))
-    UnitResult(UnitConfig("unit1", "This is unit1", UnitRunConfig(dbCommunicationConfig, repeats), parallel), List(unitRunResults))
-  }
+  val unitRunResult = UnitRunResult(DbConnInitSuccess(start, end), List(DbCallSuccess(start, end, UpdateCount(12)),
+    DbCallSuccess(start, end, FetchedRows(10)), DbCallFailure(start, end, ex)))
+
+  val unitConfig = UnitConfig(unitName, unitDescription, UnitRunConfig(DbCommunicationConfig("A", "B", "C", "D", "E", 10, 15), repeats), parallel)
+
+  val unitResult = UnitResult(unitConfig, List(unitRunResult))
 
   val expectedDbConnInitSuccess = JsObject(
     Seq(
@@ -132,7 +128,7 @@ object JsonSupportTest {
       "callEnd" -> JsString(endStr),
       "duration" -> JsNumber(duration),
       "statementResult" -> JsObject(Seq(
-        "fetchedRows" -> JsNumber(77)
+        "fetchedRows" -> JsNumber(10)
       ))
     )
   )
@@ -154,5 +150,86 @@ object JsonSupportTest {
       expectedDbCallSuccessWithFetchedRows,
       expectedDbCallFailure
     ))
+  ))
+
+  val expectedUnitSummary = JsObject(Seq(
+    "connInits" -> JsObject(Seq(
+      "executed" -> JsObject(Seq(
+        "count" -> JsNumber(1),
+        "min" -> JsNumber(duration),
+        "max" -> JsNumber(duration),
+        "mean" -> JsNumber(duration),
+        "median" -> JsNumber(duration),
+        "stddev" -> JsNumber(0.0),
+        "successful" -> JsObject(Seq(
+          "count" -> JsNumber(1),
+          "min" -> JsNumber(duration),
+          "max" -> JsNumber(duration),
+          "mean" -> JsNumber(duration),
+          "median" -> JsNumber(duration),
+          "stddev" -> JsNumber(0.0)
+        )),
+        "failed" -> JsObject(Seq(
+          "count" -> JsNumber(0),
+          "min" -> JsNull,
+          "max" -> JsNull,
+          "mean" -> JsNull,
+          "median" -> JsNull,
+          "stddev" -> JsNull
+        ))
+      ))
+    )),
+    "expectedDbCalls" -> JsNumber(repeats * parallel),
+    "dbCalls" -> JsObject(Seq(
+      "executed" -> JsObject(Seq(
+        "count" -> JsNumber(3),
+        "min" -> JsNumber(duration),
+        "max" -> JsNumber(duration),
+        "mean" -> JsNumber(duration),
+        "median" -> JsNumber(duration),
+        "stddev" -> JsNumber(0),
+        "successful" -> JsObject(Seq(
+          "count" -> JsNumber(2),
+          "min" -> JsNumber(duration),
+          "max" -> JsNumber(duration),
+          "mean" -> JsNumber(duration),
+          "median" -> JsNumber(duration),
+          "stddev" -> JsNumber(0.0)
+        )),
+        "failed" -> JsObject(Seq(
+          "count" -> JsNumber(1),
+          "min" -> JsNumber(duration),
+          "max" -> JsNumber(duration),
+          "mean" -> JsNumber(duration),
+          "median" -> JsNumber(duration),
+          "stddev" -> JsNumber(0)
+        ))
+      ))
+    ))
+  ))
+
+  val expectedUnitConfig = JsObject(Seq(
+    "name" -> JsString(unitName),
+    "description" -> JsString(unitDescription),
+    "parallelConnections" -> JsNumber(parallel),
+    "unitRunConfig" -> JsObject(Seq(
+      "repeats" -> JsNumber(repeats),
+      "databaseConfig" -> JsObject(Seq(
+        "uri" -> JsString("A"),
+        "driverClass" -> JsString("B"),
+        "username" -> JsString("C"),
+        "password" -> JsString("D"),
+        "query" -> JsString("E"),
+        "connectionTimeout" -> JsNumber(10),
+        "queryTimeout" -> JsNumber(15)
+      ))
+    ))
+
+  ))
+
+  val expectedUnitResult = JsObject(Seq(
+    "unitSummary" -> expectedUnitSummary,
+    "unitRuns" -> JsArray(Seq(expectedUnitRunResult)),
+    "configuration" -> expectedUnitConfig
   ))
 }

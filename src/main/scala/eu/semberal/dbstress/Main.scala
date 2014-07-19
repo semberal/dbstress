@@ -2,12 +2,7 @@ package eu.semberal.dbstress
 
 import java.io.File
 
-import akka.actor.{ActorSystem, Props}
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import eu.semberal.dbstress.actor.ManagerActor.RunScenario
-import eu.semberal.dbstress.actor.{ManagerActor, ResultsExporterActor, TerminatorActor}
-import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
-import eu.semberal.dbstress.model.Configuration.ScenarioConfig
 import scopt.OptionParser
 
 object Main extends LazyLogging {
