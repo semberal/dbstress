@@ -3,6 +3,7 @@ package eu.semberal.dbstress
 import java.io.File
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
+import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import scopt.OptionParser
 
 object Main extends LazyLogging {
@@ -40,8 +41,13 @@ object Main extends LazyLogging {
     }
 
     parser.parse(args, CmdLineArguments()) match {
-      case Some(x) => new Orchestrator(x).runScenario()
-      case None => System.exit(1)
+      case Some(CmdLineArguments(configFile, outpuDir)) => parseConfigurationYaml(configFile) match {
+        case Right(sc) => new Orchestrator(configFile).run(sc)
+        case Left(msg) =>
+          System.err.println(s"Configuration error: $msg")
+          System.exit(2) // exit status 2 when configuration parsing error has occurred
+      }
+      case None => System.exit(1) // exit status 1 when command line arguments were incorrect
     }
   }
 }

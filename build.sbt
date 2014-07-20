@@ -14,6 +14,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= {
   val akkaVersion = "2.3.4"
+  val scalamockVersion = "3.1.2"
   Seq(
     /* Akka */
     "com.typesafe.akka" % "akka-actor_2.11" % akkaVersion,
@@ -27,9 +28,12 @@ libraryDependencies ++= {
     "org.yaml" % "snakeyaml" % "1.13",
     /* Testing */
     "org.scalatest" %% "scalatest" % "2.2.0" % "test",
+    "org.scalamock" %% "scalamock-core" % scalamockVersion % "test",
+    "org.scalamock" %% "scalamock-scalatest-support" % scalamockVersion % "test",
+    "org.clapper" % "grizzled-scala_2.11" % "1.2" % "test",
+    "com.h2database" % "h2" % "1.4.178" % "test",
     /* Other */
     "com.jsuereth" % "scala-arm_2.11" % "1.4",
-    "com.h2database" % "h2" % "1.4.178",
     "org.scalanlp" % "breeze_2.11" % "0.8.1",
     "com.typesafe.play" % "play-json_2.11" % "2.3.1",
     "com.github.scopt" % "scopt_2.11" % "3.2.0"

@@ -1,6 +1,6 @@
 package eu.semberal.dbstress.config
 
-import java.io.{BufferedReader, File, FileReader}
+import java.io.{Reader, BufferedReader, File, FileReader}
 import java.util.{Map => JMap}
 
 import eu.semberal.dbstress.model.Configuration._
@@ -19,13 +19,16 @@ object ConfigParser {
       (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
     }
 
-  def parseConfigurationYaml(f: File): Either[String, ScenarioConfig] = {
+  def parseConfigurationYaml(f: File): Either[String, ScenarioConfig] =
+    parseConfigurationYaml(new BufferedReader(new FileReader(f)))
+
+  def parseConfigurationYaml(reader: Reader): Either[String, ScenarioConfig] = {
 
     def isStringNonEmpty(s: String): Boolean = Option(s).getOrElse("").length > 0
 
     val yaml = new Yaml
 
-    managed(new BufferedReader(new FileReader(f))).map { reader =>
+    managed(reader).map { reader =>
       yaml.loadAll(reader).map(x => Map(x.asInstanceOf[JMap[String, Object]].toList: _*))
     }.toTry match {
       case Failure(e) => Left(e.getMessage)
@@ -68,8 +71,8 @@ object ConfigParser {
     }
   }
 
-  def loadFromMap[T: ClassTag](map: Map[String, Any], key: String)
-                              (validation: T => Boolean = (_: T) => true): Either[String, T] = {
+  private[this] def loadFromMap[T: ClassTag](map: Map[String, Any], key: String)
+                                            (validation: T => Boolean = (_: T) => true): Either[String, T] = {
     val rtc = implicitly[ClassTag[T]].runtimeClass
     map.get(key) match {
       case None => Left(s"Configuration property $key is missing")
