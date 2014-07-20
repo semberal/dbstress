@@ -38,7 +38,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         logger.debug("Database connection has been successfully created")
         goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(start, now()))
       } catch {
-        case e: Throwable => // todo unit tests
+        case e: Throwable =>
           logger.debug("An error during connection initialization has occurred", e)
           stay() replying DbConnInitFinished(DbConnInitFailure(start, now(), e))
       }
@@ -56,7 +56,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
               if (statement.execute(dbConfig.query)) {
                 val resultSet = statement.getResultSet // todo support multiple result sets (statement#getMoreResults)
                 val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
-                FetchedRows(fetchedRows) // todo unit tests
+                FetchedRows(fetchedRows)
               } else {
                 UpdateCount(statement.getUpdateCount)
               }
@@ -72,17 +72,18 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         throw new TimeoutException("Database call has timed out")
       }
 
+      val s = sender() // do not close over sender() in a Future!
       Future.firstCompletedOf(Seq(dbFuture, timeoutFuture)).onComplete {
         case Success(fetched) =>
-          context.parent ! DbCallFinished(DbCallSuccess(start, now(), fetched))
+          s ! DbCallFinished(DbCallSuccess(start, now(), fetched))
         case Failure(e) =>
-          context.parent ! DbCallFinished(DbCallFailure(start, now(), e))
+          s ! DbCallFinished(DbCallFailure(start, now(), e))
       }
       stay()
   }
 
   onTermination {
-    case StopEvent(_, _, connection) => // todo unit test for closing the connection
+    case StopEvent(_, _, connection) =>
       logger.debug("Closing database connection")
       try {
         connection.foreach(_.close())
