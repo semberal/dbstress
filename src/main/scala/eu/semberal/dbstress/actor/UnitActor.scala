@@ -15,7 +15,7 @@ class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with Logg
   when(Uninitialized) {
     case Event(InitUnit, _) =>
       (1 to unitConfig.parallelConnections).map(i => {
-        val actor = context.actorOf(Props(classOf[UnitRunActor], unitConfig.config), s"user${i}run")
+        val actor = context.actorOf(Props(classOf[UnitRunActor], unitConfig.config), s"run$i")
         actor ! InitUnitRun
       })
       goto(InitConfirmationsWait) using RemainingInitUnitRunConfirmations(unitConfig.parallelConnections)
