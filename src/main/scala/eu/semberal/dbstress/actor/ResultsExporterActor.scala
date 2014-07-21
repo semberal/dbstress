@@ -38,7 +38,6 @@ class ResultsExporterActor(outputDir: File) extends Actor {
       }
     }
 
-    // todo show unit configuration next to the description
     def writeCsvSummary(): Unit = {
 
       for (f <- managed(new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}summary.$curr.csv")))) {
