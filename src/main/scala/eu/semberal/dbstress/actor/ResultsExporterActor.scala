@@ -2,71 +2,87 @@ package eu.semberal.dbstress.actor
 
 import java.io.{BufferedWriter, File, FileWriter}
 
-import akka.actor.{Status, Actor}
-import eu.semberal.dbstress.Defaults
+import akka.actor.{Actor, Status}
+import breeze.io.CSVWriter
+import eu.semberal.dbstress.Defaults.filePathFriendlyDateTimeFormat
 import eu.semberal.dbstress.actor.ManagerActor.ResultsExported
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
-import eu.semberal.dbstress.model.Results.{ScenarioResult, UnitResult}
-import resource._
+import eu.semberal.dbstress.model.JsonSupport._
+import eu.semberal.dbstress.model.Results.ScenarioResult
+import eu.semberal.dbstress.util.ModelExtensions._
 import org.joda.time.DateTime._
 import play.api.libs.json.Json
-import eu.semberal.dbstress.model.JsonSupport._
+import resource._
 
 class ResultsExporterActor(outputDir: File) extends Actor {
-  val curr = Defaults.filePathFriendlyDateTimeFormat.print(now())
 
   override def receive: Receive = {
 
     case ExportResults(sr: ScenarioResult) =>
       try {
-        writeCompleteJson(sr)
+        writeResults(sr)
         sender ! ResultsExported
       } catch {
-        case e: Throwable => sender ! Status.Failure(e) // todo unit test it results in future failure
+        case e: Throwable => sender ! Status.Failure(e)
       }
 
   }
 
-  def writeCompleteJson(scenarioResult: ScenarioResult): Unit = {
-    for (b <- managed(new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}complete.$curr.json")))) {
-      val out = Json.prettyPrint(Json.toJson(scenarioResult))
-      b.write(out)
-    }
-  }
+  def writeResults(scenarioResult: ScenarioResult): Unit = {
+    val curr = filePathFriendlyDateTimeFormat.print(now())
 
-  def writeCsvSummary(): Unit = {
-    // todo implement
+    def writeCompleteJson(): Unit = {
+      for (b <- managed(new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}complete.$curr.json")))) {
+        val out = Json.prettyPrint(Json.toJson(scenarioResult))
+        b.write(out)
+      }
+    }
+
     // todo show unit configuration next to the description
-    //      for (f <- new BufferedWriter(new FileWriter(s"${dir}${File.separator}summary.$curr.csv")).auto) {
-    //
-    //        val header = IndexedSeq("name", "description",
-    //          "expectedDbCalls", "executedDbCalls", "notExecutedDbCalls", "successfulDbCalls", "failedDbCalls",
-    //          "executedDbCallsMin", "executedDbCallsMax", "executedDbCallsMean", "executedDbCallsMedian", "executedDbCallsStddev",
-    //          "successfulDbCallsMin", "successfulDbCallsMax", "successfulDbCallsMean", "successfulDbCallsMedian", "successfulDbCallsStddev",
-    //          "failedDbCallsMin", "failedDbCallsMax", "failedDbCallsMean", "failedDbCallsMedian", "failedDbCallsStddev"
-    //        )
-    //
-    //        val rows = List(unitResults.map(s =>
-    //          IndexedSeq(s.unitConfig.name, s.unitConfig.description,
-    //            s.summary.expectedDbCalls.toString, s.summary.executedDbCalls.toString, s.summary.notExecutedDbCalls.toString,
-    //            s.summary.successfulDbCalls.toString, s.summary.failedDbCalls.toString,
-    //
-    //            s.summary.executedDbCallsMin.getOrMissingString, s.summary.executedDbCallsMax.getOrMissingString,
-    //            s.summary.executedDbCallsMean.getOrMissingString, s.summary.executedDbCallsMedian.getOrMissingString,
-    //            s.summary.executedDbCallsStddev.getOrMissingString,
-    //
-    //            s.summary.successfulDbCallsMin.getOrMissingString, s.summary.successfulDbCallsMax.getOrMissingString,
-    //            s.summary.successfulDbCallsMean.getOrMissingString, s.summary.successfulDbCallsMedian.getOrMissingString,
-    //            s.summary.successfulDbCallsStddev.getOrMissingString,
-    //
-    //            s.summary.failedDbCallsMin.getOrMissingString, s.summary.failedDbCallsMax.getOrMissingString,
-    //            s.summary.failedDbCallsMean.getOrMissingString, s.summary.failedDbCallsMedian.getOrMissingString,
-    //            s.summary.failedDbCallsStddev.getOrMissingString
-    //          )
-    //        ): _*)
-    //
-    //        CSVWriter.write(f, header :: rows)
-    //      }
+    def writeCsvSummary(): Unit = {
+
+      for (f <- managed(new BufferedWriter(new FileWriter(s"${outputDir}${File.separator}summary.$curr.csv")))) {
+
+        val header = IndexedSeq(
+          "name", "description", "uri", "parallelConnections", "repeats",
+
+          "expectedDbCalls", "executedDbCalls", "successfulDbCalls", "failedDbCalls",
+
+          "executedDbCallsMin", "executedDbCallsMax", "executedDbCallsMean", "executedDbCallsMedian", "executedDbCallsStddev",
+
+          "successfulDbCallsMin", "successfulDbCallsMax", "successfulDbCallsMean", "successfulDbCallsMedian", "successfulDbCallsStddev",
+
+          "failedDbCallsMin", "failedDbCallsMax", "failedDbCallsMean", "failedDbCallsMedian", "failedDbCallsStddev"
+        )
+
+        val rows = List(scenarioResult.unitResults.map(s =>
+          IndexedSeq(
+            s.unitConfig.name, s.unitConfig.description, s.unitConfig.config.dbConfig.uri,
+            s.unitConfig.parallelConnections.toString, s.unitConfig.config.repeats.toString,
+
+            s.summary.expectedDbCalls.toString, s.summary.executedDbCallsSummary.count.toString, s.summary.successfulDbCallsSummary.count.toString,
+            s.summary.failedDbCallsSummary.count.toString,
+
+            s.summary.executedDbCallsSummary.min.getOrMissingString, s.summary.executedDbCallsSummary.max.getOrMissingString,
+            s.summary.executedDbCallsSummary.mean.getOrMissingString, s.summary.executedDbCallsSummary.median.getOrMissingString,
+            s.summary.executedDbCallsSummary.stddev.getOrMissingString,
+
+            s.summary.successfulDbCallsSummary.min.getOrMissingString, s.summary.successfulDbCallsSummary.max.getOrMissingString,
+            s.summary.successfulDbCallsSummary.mean.getOrMissingString, s.summary.successfulDbCallsSummary.median.getOrMissingString,
+            s.summary.successfulDbCallsSummary.stddev.getOrMissingString,
+
+            s.summary.failedDbCallsSummary.min.getOrMissingString, s.summary.failedDbCallsSummary.max.getOrMissingString,
+            s.summary.failedDbCallsSummary.mean.getOrMissingString, s.summary.failedDbCallsSummary.median.getOrMissingString,
+            s.summary.failedDbCallsSummary.stddev.getOrMissingString
+          )
+        ): _*)
+
+        CSVWriter.write(f, header :: rows)
+      }
+    }
+
+    writeCompleteJson()
+    writeCsvSummary()
   }
 }
 

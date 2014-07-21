@@ -1,6 +1,6 @@
 package eu.semberal.dbstress
 
-import java.io.{File, InputStreamReader}
+import java.io.{FilenameFilter, File, InputStreamReader}
 import java.nio.file.Files.createTempDirectory
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
@@ -8,6 +8,7 @@ import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import grizzled.file.GrizzledFile._
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import play.api.libs.json.{JsArray, JsObject, Json}
+import resource.managed
 
 import scala.concurrent.duration.DurationLong
 import scala.io.Source
@@ -32,14 +33,34 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
     val system = new Orchestrator(tmpDir).run(config)
     system.awaitTermination(5.seconds)
 
-    val files = tmpDir.listFiles()
-    files should have size 1
-    val json = Json.parse(Source.fromFile(files(0)).mkString).asInstanceOf[JsObject]
+    /* Test generated JSON */
+    val jsonFiles = tmpDir.listFiles(new FilenameFilter {
+      override def accept(dir: File, name: String): Boolean = name.endsWith(".json")
+    })
+    jsonFiles should have size 1
 
-    (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value should have size 5
-    (json \\ "configuration") should have size 5
-    (json \\ "unitSummary") should have size 5
-    (json \\ "connectionInit") should have size 108
+    managed(Source.fromFile(jsonFiles.head)) foreach { source =>
+      val json = Json.parse(source.mkString).asInstanceOf[JsObject]
+      (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value should have size 5
+      (json \\ "configuration") should have size 5
+      (json \\ "unitSummary") should have size 5
+      (json \\ "connectionInit") should have size 108
+    }
+
+    /* Test generated CSV file*/
+    val csvFiles = tmpDir.listFiles(new FilenameFilter {
+      override def accept(dir: File, name: String): Boolean = name.endsWith(".csv")
+    })
+
+    csvFiles should have size 1
+
+    managed(Source.fromFile(csvFiles.head)) foreach { source =>
+      val lines = source.getLines().toList
+      lines should have size 6
+      lines.tail.foreach { line =>
+        line should startWith regex "\"unit[1-5]{1}\"".r
+      }
+    }
   }
 }
 

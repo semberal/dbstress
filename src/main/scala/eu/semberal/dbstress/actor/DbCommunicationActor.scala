@@ -54,7 +54,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
           blocking {
             managed(conn.createStatement()).map({ statement =>
               if (statement.execute(dbConfig.query)) {
-                val resultSet = statement.getResultSet // todo support multiple result sets (statement#getMoreResults)
+                val resultSet = statement.getResultSet
                 val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
                 FetchedRows(fetchedRows)
               } else {

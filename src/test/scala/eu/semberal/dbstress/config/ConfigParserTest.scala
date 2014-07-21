@@ -6,7 +6,6 @@ import scala.reflect.ClassTag
 class ConfigParserTest extends FlatSpec with Matchers {
   "ClassTag" should "behave as expected for int type" in {
     val rtc = implicitly[ClassTag[java.lang.Integer]].runtimeClass
-    //    val rtc = implicitly[ClassTag[Int]].runtimeClass
     rtc.isInstance(4) should be(true)
     rtc.isInstance(new java.lang.Integer(45)) should be(true)
     rtc.isInstance(null) should be(false)
