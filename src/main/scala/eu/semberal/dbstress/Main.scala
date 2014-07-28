@@ -41,8 +41,8 @@ object Main extends LazyLogging {
     }
 
     parser.parse(args, CmdLineArguments()) match {
-      case Some(CmdLineArguments(configFile, outpuDir)) => parseConfigurationYaml(configFile) match {
-        case Right(sc) => new Orchestrator(configFile).run(sc)
+      case Some(CmdLineArguments(configFile, outputDir)) => parseConfigurationYaml(configFile) match {
+        case Right(sc) => new Orchestrator(outputDir).run(sc)
         case Left(msg) =>
           System.err.println(s"Configuration error: $msg")
           System.exit(2) // exit status 2 when configuration parsing error has occurred
