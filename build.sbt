@@ -40,4 +40,3 @@ libraryDependencies ++= {
   )
 }
 
-XitrumPackage.copy("bin", "LICENSE.txt", "README.md")
