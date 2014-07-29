@@ -2,7 +2,7 @@ package eu.semberal.dbstress.actor
 
 import java.sql.{Connection, DriverManager}
 import java.util.concurrent.TimeUnit.MILLISECONDS
-import java.util.concurrent.TimeoutException
+import java.util.concurrent._
 
 import akka.actor.{Actor, LoggingFSM}
 import com.typesafe.scalalogging.slf4j.LazyLogging
@@ -15,16 +15,17 @@ import org.joda.time.DateTime.now
 import resource._
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future, blocking}
+import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
 class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[Connection]] {
+
+  private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
 
   startWith(Uninitialized, None)
 
   when(Uninitialized) {
     case Event(InitDbConnection, _) =>
-      implicit val executionContext = context.dispatcher
       val start = now()
 
       val f = Future {
@@ -46,24 +47,21 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
 
   when(WaitForJob) {
     case Event(NextRound, connection) =>
-      implicit val executionContext = context.system.dispatcher
       val start = now()
 
       val dbFuture: Future[StatementResult] = Future {
         connection.map { conn =>
-          blocking {
-            managed(conn.createStatement()).map({ statement =>
-              if (statement.execute(dbConfig.query)) {
-                val resultSet = statement.getResultSet
-                val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
-                FetchedRows(fetchedRows)
-              } else {
-                UpdateCount(statement.getUpdateCount)
-              }
-            }).toTry match {
-              case Success(x) => x
-              case Failure(e) => throw e
+          managed(conn.createStatement()).map({ statement =>
+            if (statement.execute(dbConfig.query)) {
+              val resultSet = statement.getResultSet
+              val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
+              FetchedRows(fetchedRows)
+            } else {
+              UpdateCount(statement.getUpdateCount)
             }
+          }).toTry match {
+            case Success(x) => x
+            case Failure(e) => throw e
           }
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
