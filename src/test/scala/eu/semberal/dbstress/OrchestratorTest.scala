@@ -1,6 +1,7 @@
 package eu.semberal.dbstress
 
 import java.io.{FilenameFilter, File, InputStreamReader}
+import java.lang.System.currentTimeMillis
 import java.nio.file.Files.createTempDirectory
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
@@ -16,7 +17,7 @@ import scala.io.Source
 class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with LazyLogging {
 
   def withTempDir(testCode: File => Unit): Unit = {
-    val file = createTempDirectory("dbstress_OrchestratorTest_").toFile
+    val file = createTempDirectory(s"dbstress_OrchestratorTest_${currentTimeMillis()}_").toFile
     try {
       testCode(file)
     } finally {
@@ -44,7 +45,7 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
       (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value should have size 5
       (json \\ "configuration") should have size 5
       (json \\ "unitSummary") should have size 5
-      (json \\ "connectionInit") should have size 108
+      (json \\ "connectionInit") should have size 222
     }
 
     /* Test generated CSV file*/
@@ -63,4 +64,3 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
     }
   }
 }
-
