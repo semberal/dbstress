@@ -40,14 +40,14 @@ object ConfigParser {
             username <- loadFromMap[String, String](map, "username")(isStringNonEmpty).right
             password <- loadFromMap[String, String](map, "password")().right
             query <- loadFromMap[String, String](map, "query")(isStringNonEmpty).right
-            connectionTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "connection_timeout")().right
-            queryTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "query_timeout")().right
+            connectionTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "connection_timeout")(_ > 0).right
+            queryTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "query_timeout")(_ > 0).right
 
             repeats <- loadFromMap[Int, java.lang.Integer](map, "repeats")(_ > 0).right
 
             unitName <- loadFromMap[String, String](map, "unit_name")(isStringNonEmpty).right
             description <- loadFromMapOptional[String, String](map, "description")().right
-            parallelConnections <- loadFromMap[Int, java.lang.Integer](map, "parallel_connections")(_ > 1).right
+            parallelConnections <- loadFromMap[Int, java.lang.Integer](map, "parallel_connections")(_ > 0).right
           } yield {
             val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query,
               connectionTimeout, queryTimeout)
