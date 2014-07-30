@@ -1,12 +1,11 @@
 package eu.semberal.dbstress
 
-import java.io.{FilenameFilter, File, InputStreamReader}
+import java.io.{File, FilenameFilter, InputStreamReader}
 import java.lang.System.currentTimeMillis
 import java.nio.file.Files.createTempDirectory
 
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
-import grizzled.file.GrizzledFile._
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
 import play.api.libs.json.{JsArray, JsObject, Json}
 import resource.managed
@@ -21,10 +20,10 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
     try {
       testCode(file)
     } finally {
-      file.deleteRecursively() match {
-        case Left(msg) => logger.warn(s"Unable to delete temporary test directory ${file.getAbsolutePath}: $msg")
-        case _ =>
-      }
+//      file.deleteRecursively() match {
+//        case Left(msg) => logger.warn(s"Unable to delete temporary test directory ${file.getAbsolutePath}: $msg")
+//        case _ =>
+//      }
     }
   }
 
