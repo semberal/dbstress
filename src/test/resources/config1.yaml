@@ -71,7 +71,6 @@ query_timeout: 500
 
 ---
 unit_name: unit6
-description: Example of an successful unit with not defined timeouts
 query: select 1
 uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver

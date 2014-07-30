@@ -56,7 +56,7 @@ class ResultsExporterActor(outputDir: File) extends Actor {
 
         val rows = List(scenarioResult.unitResults.map(s =>
           IndexedSeq(
-            s.unitConfig.name, s.unitConfig.description, s.unitConfig.config.dbConfig.uri,
+            s.unitConfig.name, s.unitConfig.description.getOrElse(""), s.unitConfig.config.dbConfig.uri,
             s.unitConfig.parallelConnections.toString, s.unitConfig.config.repeats.toString,
 
             s.summary.expectedDbCalls.toString, s.summary.executedDbCallsSummary.count.toString, s.summary.successfulDbCallsSummary.count.toString,

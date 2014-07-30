@@ -8,7 +8,7 @@ object Configuration {
 
   case class ScenarioConfig(units: Seq[UnitConfig])
 
-  case class UnitConfig(name: String, description: String, config: UnitRunConfig, parallelConnections: Int)
+  case class UnitConfig(name: String, description: Option[String], config: UnitRunConfig, parallelConnections: Int)
 
   case class UnitRunConfig(dbConfig: DbCommunicationConfig, repeats: Int)
 

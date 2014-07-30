@@ -46,7 +46,7 @@ object ConfigParser {
             repeats <- loadFromMap[Int, java.lang.Integer](map, "repeats")(_ > 0).right
 
             unitName <- loadFromMap[String, String](map, "unit_name")(isStringNonEmpty).right
-            description <- loadFromMap[String, String](map, "description")().right
+            description <- loadFromMapOptional[String, String](map, "description")().right
             parallelConnections <- loadFromMap[Int, java.lang.Integer](map, "parallel_connections")(_ > 1).right
           } yield {
             val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query,

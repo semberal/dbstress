@@ -96,7 +96,7 @@ object JsonSupportTest {
   val unitRunResult = UnitRunResult(DbConnInitSuccess(start, end), List(DbCallSuccess(start, end, UpdateCount(12)),
     DbCallSuccess(start, end, FetchedRows(10)), DbCallFailure(start, end, ex)))
 
-  val unitConfig = UnitConfig(unitName, unitDescription, UnitRunConfig(DbCommunicationConfig("A", "B", "C", "D", "E", Some(10), Some(15)), repeats), parallel)
+  val unitConfig = UnitConfig(unitName, Some(unitDescription), UnitRunConfig(DbCommunicationConfig("A", "B", "C", "D", "E", Some(10), Some(15)), repeats), parallel)
 
   val unitResult = UnitResult(unitConfig, List(unitRunResult))
 
