@@ -1,5 +1,6 @@
 package eu.semberal.dbstress.actor
 
+import java.lang.Class.forName
 import java.sql.{Connection, DriverManager}
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent._
@@ -30,7 +31,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
       val start = now()
 
       val f = Future {
-        Class.forName(dbConfig.driverClass)
+        dbConfig.driverClass.foreach(forName)
         DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
       }
 

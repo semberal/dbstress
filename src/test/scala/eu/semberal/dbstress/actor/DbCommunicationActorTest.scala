@@ -32,11 +32,11 @@ class DbCommunicationActorTest
 
   trait correctDbCommunicationConfigScope extends dbCommunicationConfigScope {
     val dbCommunicationConfig: DbCommunicationConfig =
-      DbCommunicationConfig("jdbc:h2:mem://localhost", "org.h2.Driver", "sa", "", "select 1", Some(1000), Some(1000))
+      DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", Some(1000), Some(1000))
   }
 
   trait wrongDbCommunicationConfigScope extends dbCommunicationConfigScope {
-    val dbCommunicationConfig = DbCommunicationConfig("A", "B", "C", "D", "E", Some(1), Some(2))
+    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(1), Some(2))
   }
 
   trait actorScope {
@@ -66,7 +66,7 @@ class DbCommunicationActorTest
     }
 
   it should "correctly close its initialized connection" in {
-    val dbCommunicationConfig = DbCommunicationConfig("A", "B", "C", "D", "E", Some(1), Some(2))
+    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(1), Some(2))
     val actor = TestFSMRef(new DbCommunicationActor(dbCommunicationConfig))
     val connection = stub[Connection]
     actor.setState(stateData = Some(connection))

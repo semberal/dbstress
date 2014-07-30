@@ -36,7 +36,7 @@ object ConfigParser {
         val units = foo.toList.map { map =>
           for {
             uri <- loadFromMap[String, String](map, "uri")(isStringNonEmpty).right
-            driverClass <- loadFromMap[String, String](map, "driver_class")(isStringNonEmpty).right
+            driverClass <- loadFromMapOptional[String, String](map, "driver_class")(isStringNonEmpty).right
             username <- loadFromMap[String, String](map, "username")(isStringNonEmpty).right
             password <- loadFromMap[String, String](map, "password")().right
             query <- loadFromMap[String, String](map, "query")(isStringNonEmpty).right

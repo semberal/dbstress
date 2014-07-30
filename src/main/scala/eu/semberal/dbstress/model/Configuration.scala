@@ -12,7 +12,7 @@ object Configuration {
 
   case class UnitRunConfig(dbConfig: DbCommunicationConfig, repeats: Int)
 
-  case class DbCommunicationConfig(uri: String, driverClass: String,
+  case class DbCommunicationConfig(uri: String, driverClass: Option[String],
                                    username: String, password: String, query: String,
                                    connectionTimeout: Option[Int], queryTimeout: Option[Int])
 

@@ -67,7 +67,7 @@ object JsonSupport extends LazyLogging {
 
   implicit val dbCommunicationConfigWrites: Writes[DbCommunicationConfig] =
     ((__ \ "uri").write[String] ~
-      (__ \ "driverClass").write[String] ~
+      (__ \ "driverClass").writeNullable[String] ~
       (__ \ "username").write[String] ~
       (__ \ "password").write[String] ~
       (__ \ "query").write[String] ~
