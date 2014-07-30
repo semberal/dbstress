@@ -71,8 +71,8 @@ object JsonSupport extends LazyLogging {
       (__ \ "username").write[String] ~
       (__ \ "password").write[String] ~
       (__ \ "query").write[String] ~
-      (__ \ "connectionTimeout").write[Int] ~
-      (__ \ "queryTimeout").write[Int]) apply unlift(DbCommunicationConfig.unapply)
+      (__ \ "connectionTimeout").writeNullable[Int] ~
+      (__ \ "queryTimeout").writeNullable[Int]) apply unlift(DbCommunicationConfig.unapply)
 
   implicit val unitRunConfigWrites: Writes[UnitRunConfig] =
     ((__ \ "databaseConfig").write[DbCommunicationConfig] ~

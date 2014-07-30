@@ -21,6 +21,7 @@ import scala.util.{Failure, Success}
 class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[Connection]] {
 
   private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
+  private def mkTimeout(x: Option[Int]) = x.getOrElse(Int.MaxValue)
 
   startWith(Uninitialized, None)
 
@@ -35,7 +36,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
 
       try {
         /* not ideal, but connection reference is needed to make the state transition */
-        val connection = Await.result(f, Duration.create(dbConfig.connectionTimeout, MILLISECONDS))
+        val connection = Await.result(f, Duration.create(mkTimeout(dbConfig.connectionTimeout), MILLISECONDS))
         logger.debug("Database connection has been successfully created")
         goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(start, now()))
       } catch {
@@ -66,7 +67,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
         }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
       }
 
-      val timeoutFuture = akka.pattern.after(Duration.create(dbConfig.queryTimeout, MILLISECONDS), using = context.system.scheduler) {
+      val timeoutFuture = akka.pattern.after(Duration.create(mkTimeout(dbConfig.queryTimeout), MILLISECONDS), using = context.system.scheduler) {
         throw new TimeoutException("Database call has timed out")
       }
 

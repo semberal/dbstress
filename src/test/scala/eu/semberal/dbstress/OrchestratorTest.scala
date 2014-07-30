@@ -41,10 +41,10 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
 
     managed(Source.fromFile(jsonFiles.head)) foreach { source =>
       val json = Json.parse(source.mkString).asInstanceOf[JsObject]
-      (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value should have size 5
-      (json \\ "configuration") should have size 5
-      (json \\ "unitSummary") should have size 5
-      (json \\ "connectionInit") should have size 222
+      (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value should have size 6
+      (json \\ "configuration") should have size 6
+      (json \\ "unitSummary") should have size 6
+      (json \\ "connectionInit") should have size 227
     }
 
     /* Test generated CSV file*/
@@ -56,9 +56,9 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
 
     managed(Source.fromFile(csvFiles.head)) foreach { source =>
       val lines = source.getLines().toList
-      lines should have size 6
+      lines should have size 7
       lines.tail.foreach { line =>
-        line should startWith regex "\"unit[1-5]{1}\"".r
+        line should startWith regex "\"unit[1-6]{1}\"".r
       }
     }
   }

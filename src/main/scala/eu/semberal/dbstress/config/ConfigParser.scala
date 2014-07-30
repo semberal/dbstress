@@ -35,19 +35,19 @@ object ConfigParser {
       case Success(foo) =>
         val units = foo.toList.map { map =>
           for {
-            uri <- loadFromMap[String](map, "uri")(isStringNonEmpty).right
-            driverClass <- loadFromMap[String](map, "driver_class")(isStringNonEmpty).right
-            username <- loadFromMap[String](map, "username")(isStringNonEmpty).right
-            password <- loadFromMap[String](map, "password")().right
-            query <- loadFromMap[String](map, "query")(isStringNonEmpty).right
-            connectionTimeout <- loadFromMap[java.lang.Integer](map, "connection_timeout")().right
-            queryTimeout <- loadFromMap[java.lang.Integer](map, "query_timeout")().right
+            uri <- loadFromMap[String, String](map, "uri")(isStringNonEmpty).right
+            driverClass <- loadFromMap[String, String](map, "driver_class")(isStringNonEmpty).right
+            username <- loadFromMap[String, String](map, "username")(isStringNonEmpty).right
+            password <- loadFromMap[String, String](map, "password")().right
+            query <- loadFromMap[String, String](map, "query")(isStringNonEmpty).right
+            connectionTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "connection_timeout")().right
+            queryTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "query_timeout")().right
 
-            repeats <- loadFromMap[java.lang.Integer](map, "repeats")(_ > 0).right
+            repeats <- loadFromMap[Int, java.lang.Integer](map, "repeats")(_ > 0).right
 
-            unitName <- loadFromMap[String](map, "unit_name")(isStringNonEmpty).right
-            description <- loadFromMap[String](map, "description")().right
-            parallelConnections <- loadFromMap[java.lang.Integer](map, "parallel_connections")(_ > 1).right
+            unitName <- loadFromMap[String, String](map, "unit_name")(isStringNonEmpty).right
+            description <- loadFromMap[String, String](map, "description")().right
+            parallelConnections <- loadFromMap[Int, java.lang.Integer](map, "parallel_connections")(_ > 1).right
           } yield {
             val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query,
               connectionTimeout, queryTimeout)
@@ -71,14 +71,23 @@ object ConfigParser {
     }
   }
 
-  private[this] def loadFromMap[T: ClassTag](map: Map[String, Any], key: String)
+  private[this] def loadFromMap[T, U <% T : ClassTag](map: Map[String, Any], key: String)
                                             (validation: T => Boolean = (_: T) => true): Either[String, T] = {
-    val rtc = implicitly[ClassTag[T]].runtimeClass
+    loadFromMapOptional[T, U](map, key)(validation) match {
+      case Right(None) => Left(s"Configuration property $key is missing")
+      case Left(x) => Left(x)
+      case Right(Some(x)) => Right(x)
+    }
+  }
+
+  private[this] def loadFromMapOptional[T, U <% T : ClassTag](map: Map[String, Any], key: String)
+                                                    (validationIfPresent: T => Boolean = (_: T) => true): Either[String, Option[T]] = {
+    val rtc = implicitly[ClassTag[U]].runtimeClass
     map.get(key) match {
-      case None => Left(s"Configuration property $key is missing")
+      case None => Right(None)
       case Some(x) if !rtc.isInstance(x) => Left( s"""Value "$x" does conform to the expected type: "${rtc.getSimpleName}"""")
-      case Some(x: T) if !validation(x) => Left( s"""Invalid value "$x" for configuration entry: "$key"""")
-      case Some(x: T) => Right(x)
+      case Some(x: U) if !validationIfPresent(x) => Left( s"""Invalid value "$x" for configuration entry: "$key"""")
+      case Some(x: U) => Right(Some(x))
     }
   }
 }

@@ -14,6 +14,6 @@ object Configuration {
 
   case class DbCommunicationConfig(uri: String, driverClass: String,
                                    username: String, password: String, query: String,
-                                   connectionTimeout: Int, queryTimeout: Int)
+                                   connectionTimeout: Option[Int], queryTimeout: Option[Int])
 
 }
