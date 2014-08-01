@@ -7,7 +7,7 @@ import java.nio.file.Files.createTempDirectory
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import play.api.libs.json.{JsArray, JsObject, Json}
+import play.api.libs.json.{JsNumber, JsArray, JsObject, Json}
 import resource.managed
 
 import scala.concurrent.duration.DurationLong
@@ -41,10 +41,20 @@ class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with L
 
     managed(Source.fromFile(jsonFiles.head)) foreach { source =>
       val json = Json.parse(source.mkString).asInstanceOf[JsObject]
-      (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value should have size 6
+      val unitResults = (json \ "scenarioResult" \ "unitResults").asInstanceOf[JsArray].value.map(_.as[JsObject])
+      unitResults should have size 6
       (json \\ "configuration") should have size 6
       (json \\ "unitSummary") should have size 6
-      (json \\ "connectionInit") should have size 227
+      (json \\ "connectionInit") should have size 60
+
+      val m = unitResults.map(x =>
+        (x \ "configuration" \ "name").as[String] -> (x \ "unitSummary").as[JsObject]
+      ).toMap
+
+      m.get("unit1").get \ "expectedDbCalls" should be(JsNumber(540))
+      m.get("unit1").get \ "dbCalls" \ "executed" \ "count" should be(JsNumber(540))
+      m.get("unit1").get \ "dbCalls" \ "executed" \ "successful" \ "count" should be(JsNumber(540))
+
     }
 
     /* Test generated CSV file*/

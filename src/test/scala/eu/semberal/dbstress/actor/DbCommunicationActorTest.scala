@@ -2,12 +2,13 @@ package eu.semberal.dbstress.actor
 
 import java.sql.Connection
 
-import akka.actor.{PoisonPill, Props, ActorSystem}
+import akka.actor.{ActorSystem, PoisonPill, Props}
+import akka.testkit.TestKit.shutdownActorSystem
 import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
-import eu.semberal.dbstress.actor.DbCommunicationActor.{NextRound, InitDbConnection}
+import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound}
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
 import eu.semberal.dbstress.model.Configuration.DbCommunicationConfig
-import eu.semberal.dbstress.model.Results.{FetchedRows, DbCallSuccess, DbConnInitSuccess, DbConnInitFailure}
+import eu.semberal.dbstress.model.Results.{DbCallSuccess, DbConnInitFailure, DbConnInitSuccess, FetchedRows}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
@@ -21,9 +22,8 @@ class DbCommunicationActorTest
   with BeforeAndAfterAll
   with MockFactory {
 
-
   override protected def afterAll(): Unit = {
-    TestKit.shutdownActorSystem(system)
+    shutdownActorSystem(system)
   }
 
   trait dbCommunicationConfigScope {
@@ -36,7 +36,7 @@ class DbCommunicationActorTest
   }
 
   trait wrongDbCommunicationConfigScope extends dbCommunicationConfigScope {
-    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(1), Some(2))
+    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", None, None)
   }
 
   trait actorScope {
@@ -62,7 +62,7 @@ class DbCommunicationActorTest
       actor ! InitDbConnection
       receiveOne(1.second)
       actor ! NextRound
-      expectMsgPF(1.seconds) { case DbCallFinished(DbCallSuccess(_, _, FetchedRows(1))) =>}
+      expectMsgPF(1.second) { case DbCallFinished(DbCallSuccess(_, _, FetchedRows(1))) =>}
     }
 
   it should "correctly close its initialized connection" in {

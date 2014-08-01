@@ -22,6 +22,7 @@ import scala.util.{Failure, Success}
 class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[Connection]] {
 
   private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
+
   private def mkTimeout(x: Option[Int]) = x.getOrElse(Int.MaxValue)
 
   startWith(Uninitialized, None)
@@ -30,16 +31,23 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
     case Event(InitDbConnection, _) =>
       val start = now()
 
+      /*
+       * When a future succeeds. actual run of the future is reported as a duration.
+       * When a future fails, future creation start time is reported (i.e. might include waiting for ec)
+       */
       val f = Future {
+        val fStart = now()
         dbConfig.driverClass.foreach(forName)
-        DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
+        val connection = DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
+        val fEnd = now()
+        (fStart, fEnd, connection)
       }
 
       try {
         /* not ideal, but connection reference is needed to make the state transition */
-        val connection = Await.result(f, Duration.create(mkTimeout(dbConfig.connectionTimeout), MILLISECONDS))
+        val (s, e, connection) = Await.result(f, Duration.create(mkTimeout(dbConfig.connectionTimeout), MILLISECONDS))
         logger.debug("Database connection has been successfully created")
-        goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(start, now()))
+        goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(s, e))
       } catch {
         case e: Throwable =>
           logger.debug("An error during connection initialization has occurred", e)
@@ -51,8 +59,9 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
     case Event(NextRound, connection) =>
       val start = now()
 
-      val dbFuture: Future[StatementResult] = Future {
-        connection.map { conn =>
+      val dbFuture = Future {
+        val futStart = now()
+        val statementResult = connection.map { conn =>
           managed(conn.createStatement()).map({ statement =>
             if (statement.execute(dbConfig.query)) {
               val resultSet = statement.getResultSet
@@ -65,19 +74,24 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with L
             case Success(x) => x
             case Failure(e) => throw e
           }
-        }.getOrElse(throw new IllegalStateException("Connection has not been initialized"))
+        }.getOrElse(throw new IllegalStateException("Connection has not been initialized, yet. "))
+        val futEnd = now()
+        (futStart, futEnd, statementResult)
       }
 
-      val timeoutFuture = akka.pattern.after(Duration.create(mkTimeout(dbConfig.queryTimeout), MILLISECONDS), using = context.system.scheduler) {
+      val timeoutFuture = akka.pattern.after(
+        Duration.create(mkTimeout(dbConfig.queryTimeout), MILLISECONDS),
+        using = context.system.scheduler
+      ) {
         throw new TimeoutException("Database call has timed out")
       }
 
-      val s = sender() // do not close over sender() in a Future!
-      Future.firstCompletedOf(Seq(dbFuture, timeoutFuture)).onComplete {
-        case Success(fetched) =>
-          s ! DbCallFinished(DbCallSuccess(start, now(), fetched))
+      val currentSender = sender() // do not close over sender() in a Future!!!
+      Future.firstCompletedOf(dbFuture :: timeoutFuture :: Nil).onComplete {
+        case Success((s, e, fetched)) =>
+          currentSender ! DbCallFinished(DbCallSuccess(s, e, fetched))
         case Failure(e) =>
-          s ! DbCallFinished(DbCallFailure(start, now(), e))
+          currentSender ! DbCallFinished(DbCallFailure(start, now(), e))
       }
       stay()
   }

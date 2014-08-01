@@ -6,7 +6,7 @@ uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
 password: ""
-parallel_connections: 70
+parallel_connections: 18
 repeats: 30
 connection_timeout: 500
 query_timeout: 500
@@ -20,7 +20,7 @@ uri: "foobar"
 driver_class: org.h2.Driver
 username: sa
 password: ""
-parallel_connections: 20
+parallel_connections: 8
 repeats: 25
 connection_timeout: 500
 query_timeout: 500
@@ -35,7 +35,7 @@ uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
 password: ""
-parallel_connections: 2
+parallel_connections: 4
 repeats: 50
 connection_timeout: 500
 query_timeout: 500
@@ -49,7 +49,7 @@ uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
 password: ""
-parallel_connections: 30
+parallel_connections: 5
 repeats: 5
 connection_timeout: 500
 query_timeout: 1
@@ -63,7 +63,7 @@ uri: "jdbc:h2:mem://localhost"
 driver_class: org.h2.Driver
 username: sa
 password: ""
-parallel_connections: 100
+parallel_connections: 15
 repeats: 5
 connection_timeout: 3
 query_timeout: 500
@@ -75,5 +75,5 @@ query: select 1
 uri: "jdbc:h2:mem://localhost"
 username: sa
 password: ""
-parallel_connections: 5
+parallel_connections: 10
 repeats: 5
