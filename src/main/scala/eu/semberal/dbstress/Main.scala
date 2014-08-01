@@ -2,6 +2,7 @@ package eu.semberal.dbstress
 
 import java.io.File
 
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import scopt.OptionParser
@@ -42,7 +43,7 @@ object Main extends LazyLogging {
 
     parser.parse(args, CmdLineArguments()) match {
       case Some(CmdLineArguments(configFile, outputDir)) => parseConfigurationYaml(configFile) match {
-        case Right(sc) => new Orchestrator(outputDir).run(sc)
+        case Right(sc) => new Orchestrator(outputDir).run(sc, ActorSystem("dbstressMaster"))
         case Left(msg) =>
           System.err.println(s"Configuration error: $msg")
           System.exit(2) // exit status 2 when configuration parsing error has occurred

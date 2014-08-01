@@ -1,37 +1,36 @@
-package eu.semberal.dbstress
+package eu.semberal.dbstress.integration
 
 import java.io.{File, FilenameFilter, InputStreamReader}
 import java.lang.System.currentTimeMillis
 import java.nio.file.Files.createTempDirectory
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
-import play.api.libs.json.{JsNumber, JsArray, JsObject, Json}
+import eu.semberal.dbstress.{AbstractActorSystemTest, Orchestrator}
+import play.api.libs.json.{JsArray, JsNumber, JsObject, Json}
 import resource.managed
 
 import scala.concurrent.duration.DurationLong
 import scala.io.Source
 
-class OrchestratorTest extends FlatSpec with Matchers with BeforeAndAfter with LazyLogging {
+class OrchestratorIntegrationTest extends AbstractActorSystemTest {
 
   def withTempDir(testCode: File => Unit): Unit = {
     val file = createTempDirectory(s"dbstress_OrchestratorTest_${currentTimeMillis()}_").toFile
     try {
       testCode(file)
     } finally {
-//      file.deleteRecursively() match {
-//        case Left(msg) => logger.warn(s"Unable to delete temporary test directory ${file.getAbsolutePath}: $msg")
-//        case _ =>
-//      }
+      //      file.deleteRecursively() match {
+      //        case Left(msg) => logger.warn(s"Unable to delete temporary test directory ${file.getAbsolutePath}: $msg")
+      //        case _ =>
+      //      }
     }
   }
 
   "Orchestrator" should "successfully launch the application and check results" in withTempDir { tmpDir =>
     val reader = new InputStreamReader(getClass.getClassLoader.getResourceAsStream("config1.yaml"))
     val config = parseConfigurationYaml(reader).right.get
-    val system = new Orchestrator(tmpDir).run(config)
-    system.awaitTermination(5.seconds)
+    new Orchestrator(tmpDir).run(config, system)
+    system.awaitTermination(10.seconds)
 
     /* Test generated JSON */
     val jsonFiles = tmpDir.listFiles(new FilenameFilter {

@@ -2,25 +2,17 @@ package eu.semberal.dbstress.actor
 
 import java.io.File
 
-import akka.actor.{ActorSystem, Props, Status}
-import akka.testkit.TestKit.shutdownActorSystem
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.actor.{Props, Status}
+import akka.pattern.ask
 import akka.util.Timeout
+import eu.semberal.dbstress.AbstractActorSystemTest
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
 import eu.semberal.dbstress.model.Results.ScenarioResult
-import org.scalatest.concurrent.{ScalaFutures, Futures}
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
-import akka.pattern.ask
+import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.duration.DurationLong
 
-class ResultsExporterActorTest
-  extends TestKit(ActorSystem())
-  with FlatSpecLike
-  with Matchers
-  with ImplicitSender
-  with BeforeAndAfterAll
-  with ScalaFutures {
+class ResultsExporterActorTest extends AbstractActorSystemTest with ScalaFutures {
 
   trait failedActorScope {
     val actor = system.actorOf(Props(classOf[ResultsExporterActor], new File("/root")))
@@ -41,6 +33,4 @@ class ResultsExporterActorTest
       ex.getMessage should fullyMatch regex "^/root/complete\\.[0-9]{8}_[0-9]{6}\\.json \\(Permission denied\\)$".r
     }
   }
-
-  override protected def afterAll(): Unit = shutdownActorSystem(system)
 }

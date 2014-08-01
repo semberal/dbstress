@@ -2,29 +2,18 @@ package eu.semberal.dbstress.actor
 
 import java.sql.Connection
 
-import akka.actor.{ActorSystem, PoisonPill, Props}
-import akka.testkit.TestKit.shutdownActorSystem
-import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
+import akka.actor.{PoisonPill, Props}
+import akka.testkit.TestFSMRef
+import eu.semberal.dbstress.AbstractActorSystemTest
 import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound}
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
 import eu.semberal.dbstress.model.Configuration.DbCommunicationConfig
 import eu.semberal.dbstress.model.Results.{DbCallSuccess, DbConnInitFailure, DbConnInitSuccess, FetchedRows}
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.duration.DurationDouble
 
-class DbCommunicationActorTest
-  extends TestKit(ActorSystem())
-  with FlatSpecLike
-  with Matchers
-  with ImplicitSender
-  with BeforeAndAfterAll
-  with MockFactory {
-
-  override protected def afterAll(): Unit = {
-    shutdownActorSystem(system)
-  }
+class DbCommunicationActorTest extends AbstractActorSystemTest with MockFactory {
 
   trait dbCommunicationConfigScope {
     val dbCommunicationConfig: DbCommunicationConfig
@@ -32,7 +21,7 @@ class DbCommunicationActorTest
 
   trait correctDbCommunicationConfigScope extends dbCommunicationConfigScope {
     val dbCommunicationConfig: DbCommunicationConfig =
-      DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", Some(1000), Some(1000))
+      DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", None, None)
   }
 
   trait wrongDbCommunicationConfigScope extends dbCommunicationConfigScope {
@@ -47,28 +36,28 @@ class DbCommunicationActorTest
   "DbCommunicationActor" should "report failed connection init when db config if wrong" in
     new wrongDbCommunicationConfigScope with actorScope {
       actor ! InitDbConnection
-      expectMsgPF(1.second) { case DbConnInitFinished(DbConnInitFailure(_, _, _)) =>}
+      expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitFailure(_, _, _)) =>}
     }
 
   it should "successfully initialize a connection when db config is correct" in
     new correctDbCommunicationConfigScope with actorScope {
 
       actor ! InitDbConnection
-      expectMsgPF(1.second) { case DbConnInitFinished(DbConnInitSuccess(_, _)) =>}
+      expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitSuccess(_, _)) =>}
     }
 
-  it should "correctly report db call results" in
+  it should "correctly report db call result" in
     new correctDbCommunicationConfigScope with actorScope {
       actor ! InitDbConnection
-      receiveOne(1.second)
+      receiveOne(5.seconds)
       actor ! NextRound
-      expectMsgPF(1.second) { case DbCallFinished(DbCallSuccess(_, _, FetchedRows(1))) =>}
+      expectMsgPF(5.seconds) { case DbCallFinished(DbCallSuccess(_, _, FetchedRows(1))) =>}
     }
 
   it should "correctly close its initialized connection" in {
-    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(1), Some(2))
-    val actor = TestFSMRef(new DbCommunicationActor(dbCommunicationConfig))
+    val dbCommunicationConfig = DbCommunicationConfig("A", None, "C", "D", "E", None, None)
     val connection = stub[Connection]
+    val actor = TestFSMRef(new DbCommunicationActor(dbCommunicationConfig))
     actor.setState(stateData = Some(connection))
 
     actor ! PoisonPill
