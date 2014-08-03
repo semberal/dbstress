@@ -2,9 +2,9 @@ package eu.semberal.dbstress.util
 
 import breeze.linalg.DenseVector
 import play.api.libs.json.{JsNull, JsNumber, JsValue}
-import resource.{ExtractableManagedResource, ManagedResource}
+import resource.ExtractableManagedResource
 
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 object ModelExtensions {
 

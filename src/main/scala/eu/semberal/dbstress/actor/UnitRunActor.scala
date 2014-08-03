@@ -1,14 +1,13 @@
 package eu.semberal.dbstress.actor
 
 import akka.actor._
-import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound}
 import eu.semberal.dbstress.actor.UnitActor.{UnitRunFinished, UnitRunInitialized}
 import eu.semberal.dbstress.actor.UnitRunActor._
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
 
-class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[UnitRunResult]] {
+class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LoggingFSM[State, Option[UnitRunResult]] {
 
   private val DbCommunicationActorName = "dbCommunicationActor"
 

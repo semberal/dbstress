@@ -1,6 +1,5 @@
 package eu.semberal.dbstress.model
 
-import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.Defaults._
 import eu.semberal.dbstress.model.Configuration.{DbCommunicationConfig, UnitConfig, UnitRunConfig}
 import eu.semberal.dbstress.model.Results._
@@ -9,7 +8,7 @@ import org.joda.time.Duration
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-object JsonSupport extends LazyLogging {
+object JsonSupport {
 
   implicit val dbCallResultWrites: Writes[DbCallResult] =
     ((__ \ "successful").write[Boolean] ~

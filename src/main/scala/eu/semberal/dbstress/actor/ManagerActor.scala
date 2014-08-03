@@ -3,9 +3,9 @@ package eu.semberal.dbstress.actor
 import java.util.concurrent.TimeUnit.MILLISECONDS
 
 import akka.actor._
+import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import eu.semberal.dbstress.Defaults
 import eu.semberal.dbstress.Defaults.exportResultsTimeout
 import eu.semberal.dbstress.actor.ManagerActor._
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
@@ -13,9 +13,6 @@ import eu.semberal.dbstress.actor.TerminatorActor.ScenarioCompleted
 import eu.semberal.dbstress.actor.UnitActor.{InitUnit, StartUnit}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
-import akka.pattern.ask
-
-import scala.util.{Failure, Success}
 
 class ManagerActor(scenario: ScenarioConfig,
                    resultsExporter: ActorRef,
@@ -35,12 +32,12 @@ class ManagerActor(scenario: ScenarioConfig,
   when(InitConfirmationsWait) {
     case Event(UnitInitialized(name), RemainingInitUnitConfirmations(n)) =>
 
+      logger.info( s"""Unit "$name" initialization has finished, ${n - 1} more to go""")
       if (n == 1) {
         logger.info( s"""Initialization of all units has completed, starting the unit runs (db calls)""")
         context.children.foreach(_ ! StartUnit)
         goto(ResultWait) using CollectedUnitResults(Nil)
       } else {
-        logger.info( s"""Unit "$name" initialization has finished, ${n - 1} more to go""")
         stay() using RemainingInitUnitConfirmations(n - 1)
       }
   }
@@ -49,6 +46,7 @@ class ManagerActor(scenario: ScenarioConfig,
     case Event(UnitFinished(unitResult), CollectedUnitResults(l)) =>
       val newUnitResults: List[UnitResult] = unitResult :: l
 
+      logger.info( s"""Unit "${unitResult.unitConfig.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
       if (newUnitResults.size == scenario.units.size) {
         logger.info("All units have successfully finished")
 
@@ -59,12 +57,13 @@ class ManagerActor(scenario: ScenarioConfig,
         val exportFuture = resultsExporter ? ExportResults(ScenarioResult(newUnitResults))
 
         exportFuture.onSuccess { case _ => logger.info("Results have been successfully exported")}
-        exportFuture.onFailure { case e => logger.warn("An error while exporting results has occurred", e)}
+        exportFuture.onFailure { case e => logger.error("An error while exporting results has occurred", e)}
+
+        logger.info("Shutting down the actor system")
         exportFuture.onComplete(_ => terminator ! ScenarioCompleted)
 
         goto(TerminationWait) using No
       } else {
-        logger.info( s"""Unit "${unitResult.unitConfig.name}" has finished, ${scenario.units.size - newUnitResults.size} more to finish""")
         stay() using CollectedUnitResults(newUnitResults)
       }
   }

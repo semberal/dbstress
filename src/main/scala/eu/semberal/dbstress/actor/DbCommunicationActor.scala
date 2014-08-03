@@ -19,7 +19,10 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-class DbCommunicationActor(dbConfig: DbCommunicationConfig) extends Actor with LazyLogging with LoggingFSM[State, Option[Connection]] {
+class DbCommunicationActor(dbConfig: DbCommunicationConfig)
+  extends Actor
+  with LazyLogging
+  with LoggingFSM[State, Option[Connection]] {
 
   private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
 

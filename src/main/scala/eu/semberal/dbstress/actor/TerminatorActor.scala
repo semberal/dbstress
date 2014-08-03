@@ -9,7 +9,6 @@ class TerminatorActor extends Actor with LazyLogging {
 
   override def receive: Receive = LoggingReceive {
     case ScenarioCompleted =>
-      logger.info("Shutting down the actor system")
       context.become(noop)
       context.system.shutdown()
   }

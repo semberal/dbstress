@@ -1,14 +1,13 @@
 package eu.semberal.dbstress.actor
 
 import akka.actor._
-import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.ManagerActor.{UnitFinished, UnitInitialized}
 import eu.semberal.dbstress.actor.UnitActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{InitUnitRun, StartUnitRun}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
 
-class UnitActor(unitConfig: UnitConfig) extends Actor with LazyLogging with LoggingFSM[State, Data] {
+class UnitActor(unitConfig: UnitConfig) extends Actor with LoggingFSM[State, Data] {
 
   startWith(Uninitialized, No)
 

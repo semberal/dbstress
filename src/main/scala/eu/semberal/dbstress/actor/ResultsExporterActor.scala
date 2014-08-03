@@ -25,7 +25,6 @@ class ResultsExporterActor(outputDir: File) extends Actor {
       } catch {
         case e: Throwable => sender ! Status.Failure(e)
       }
-
   }
 
   def writeResults(scenarioResult: ScenarioResult): Unit = {

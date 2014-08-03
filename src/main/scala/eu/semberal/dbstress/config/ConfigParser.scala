@@ -1,6 +1,6 @@
 package eu.semberal.dbstress.config
 
-import java.io.{Reader, BufferedReader, File, FileReader}
+import java.io.{BufferedReader, File, FileReader, Reader}
 import java.util.{Map => JMap}
 
 import eu.semberal.dbstress.model.Configuration._
