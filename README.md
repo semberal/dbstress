@@ -8,7 +8,7 @@ _dbstress_ is an open-source database performance and stress testing tool writte
 
 ## Obtaining and running
 
-Download the [latest release]() from the _dbstress_ [releases page]() and extract the tarball:
+Download the latest release from the _dbstress_ [releases page](https://github.com/semberal/dbstress/releases) and extract the tarball:
 
 ```bash
 tar -zxvf dbstress-${version}.tgz
@@ -34,7 +34,6 @@ You can also run the application from the cloned Github repository using [sbt](h
 
 ```bash
 git clone git@github.com:semberal/dbstress.git
-git checkout -b 1.0.0 1.0.0 # todo clone the tag directly
 sbt run -c /path/to/scenario_config.yaml -o /output/directory
 ```
 
