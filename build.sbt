@@ -2,7 +2,7 @@ organization := "eu.semberal"
 
 name := "dbstress"
 
-version := "1.0-SNAPSHOT"
+version := "1.0.0-SNAPSHOT"
 
 scalaVersion := "2.11.1"
 
@@ -39,4 +39,8 @@ libraryDependencies ++= {
     "com.github.scopt" %% "scopt" % "3.2.0"
   )
 }
+
+packSettings
+
+packMain := Map("dbstress" -> "eu.semberal.dbstress.Main")
 
