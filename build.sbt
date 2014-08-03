@@ -2,7 +2,7 @@ organization := "eu.semberal"
 
 name := "dbstress"
 
-version := "1.0.0-beta1"
+version := "1.0.0-beta2-SNAPSHOT"
 
 scalaVersion := "2.11.1"
 
