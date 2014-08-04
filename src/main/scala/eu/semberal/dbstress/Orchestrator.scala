@@ -12,7 +12,7 @@ class Orchestrator(outputDir: File) extends LazyLogging {
 
   def run(sc: ScenarioConfig, actorSystem: ActorSystem): Unit = {
     val terminator = actorSystem.actorOf(Props[TerminatorActor], "terminator")
-    val resultsExporter = actorSystem.actorOf(Props(classOf[ResultsExporterActor], outputDir), "resultsExporter")
+    val resultsExporter = actorSystem.actorOf(ResultsExporterActor.defaultProps(outputDir), "resultsExporter")
     val manager = actorSystem.actorOf(Props(classOf[ManagerActor], sc, resultsExporter, terminator), "manager")
     logger.info("Starting the scenario")
     manager ! RunScenario

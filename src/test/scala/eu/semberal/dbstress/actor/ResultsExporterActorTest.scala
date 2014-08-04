@@ -2,7 +2,7 @@ package eu.semberal.dbstress.actor
 
 import java.io.File
 
-import akka.actor.{Props, Status}
+import akka.actor.Status
 import akka.pattern.ask
 import akka.util.Timeout
 import eu.semberal.dbstress.AbstractActorSystemTest
@@ -15,7 +15,7 @@ import scala.concurrent.duration.DurationLong
 class ResultsExporterActorTest extends AbstractActorSystemTest with ScalaFutures {
 
   trait failedActorScope {
-    val actor = system.actorOf(Props(classOf[ResultsExporterActor], new File("/root")))
+    val actor = system.actorOf(ResultsExporterActor.defaultProps(new File("/root")))
   }
 
   "ResultsExporterActor" should "respond with exception when an error occurs" in new failedActorScope {
