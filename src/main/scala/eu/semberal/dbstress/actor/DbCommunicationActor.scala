@@ -26,7 +26,7 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig)
 
   private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
 
-  private def mkTimeout(x: Option[Int]) = x.getOrElse(Int.MaxValue)
+  private def mkTimeout(x: Option[Int]) = x.getOrElse(Int.MaxValue) // todo get rid of this, as well as the future
 
   startWith(Uninitialized, None)
 
