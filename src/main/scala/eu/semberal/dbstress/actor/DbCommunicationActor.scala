@@ -2,7 +2,6 @@ package eu.semberal.dbstress.actor
 
 import java.lang.Class.forName
 import java.sql.{Connection, DriverManager}
-import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent._
 
 import akka.actor.{Actor, LoggingFSM}
@@ -15,7 +14,7 @@ import eu.semberal.dbstress.util.ModelExtensions.ArmManagedResource
 import org.joda.time.DateTime.now
 import resource._
 
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationDouble
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
@@ -25,8 +24,6 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig)
   with LoggingFSM[State, Option[Connection]] {
 
   private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
-
-  private def mkTimeout(x: Option[Int]) = x.getOrElse(Int.MaxValue) // todo get rid of this, as well as the future
 
   startWith(Uninitialized, None)
 
@@ -42,13 +39,12 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig)
         val fStart = now()
         dbConfig.driverClass.foreach(forName)
         val connection = DriverManager.getConnection(dbConfig.uri, dbConfig.username, dbConfig.password)
-        val fEnd = now()
-        (fStart, fEnd, connection)
+        (fStart, now(), connection)
       }
 
       try {
         /* not ideal, but connection reference is needed to make the state transition */
-        val (s, e, connection) = Await.result(f, Duration.create(mkTimeout(dbConfig.connectionTimeout), MILLISECONDS))
+        val (s, e, connection) = Await.result(f, dbConfig.connectionTimeout.getOrElse(Int.MaxValue).milliseconds)
         logger.debug("Database connection has been successfully created")
         goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(s, e))
       } catch {
@@ -62,35 +58,38 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig)
     case Event(NextRound, connection) =>
       val start = now()
 
-      val dbFuture = Future {
-        val futStart = now()
-        val statementResult = connection.map { conn =>
-          managed(conn.createStatement()).map({ statement =>
-            if (statement.execute(dbConfig.query)) {
-              val resultSet = statement.getResultSet
-              val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
-              FetchedRows(fetchedRows)
-            } else {
-              UpdateCount(statement.getUpdateCount)
+      val futuresList = {
+        val dbFuture = Future {
+          val futStart = now()
+          val statementResult = connection.map { conn =>
+            managed(conn.createStatement()).map({ statement =>
+              if (statement.execute(dbConfig.query)) {
+                val resultSet = statement.getResultSet
+                val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
+                FetchedRows(fetchedRows)
+              } else {
+                UpdateCount(statement.getUpdateCount)
+              }
+            }).toTry match {
+              case Success(x) => x
+              case Failure(e) => throw e
             }
-          }).toTry match {
-            case Success(x) => x
-            case Failure(e) => throw e
+          }.getOrElse(throw new IllegalStateException("Connection has not been initialized, yet. "))
+          (futStart, now(), statementResult)
+        }
+
+        val timeoutFuture = dbConfig.queryTimeout.map { x =>
+          akka.pattern.after(x.milliseconds, using = context.system.scheduler) {
+            throw new TimeoutException("Database call has timed out")
           }
-        }.getOrElse(throw new IllegalStateException("Connection has not been initialized, yet. "))
-        val futEnd = now()
-        (futStart, futEnd, statementResult)
+        }
+
+        timeoutFuture.foldRight(dbFuture :: Nil)(_ :: _)
       }
 
-      val timeoutFuture = akka.pattern.after(
-        Duration.create(mkTimeout(dbConfig.queryTimeout), MILLISECONDS),
-        using = context.system.scheduler
-      ) {
-        throw new TimeoutException("Database call has timed out")
-      }
+      val currentSender = sender()
 
-      val currentSender = sender() // do not close over sender() in a Future!!!
-      Future.firstCompletedOf(dbFuture :: timeoutFuture :: Nil).onComplete {
+      Future.firstCompletedOf(futuresList).onComplete {
         case Success((s, e, fetched)) =>
           currentSender ! DbCallFinished(DbCallSuccess(s, e, fetched))
         case Failure(e) =>
