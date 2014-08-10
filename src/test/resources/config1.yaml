@@ -8,8 +8,8 @@ username: sa
 password: ""
 parallel_connections: 18
 repeats: 30
-connection_timeout: 500
-query_timeout: 500
+connection_timeout: 3000
+query_timeout: 3000
 # unit_timeout: 30000 # Not implemented yet
 
 ---
