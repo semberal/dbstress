@@ -3,18 +3,25 @@ package eu.semberal.dbstress.actor
 import java.sql.Connection
 import java.util.concurrent.TimeoutException
 
-import akka.actor.{PoisonPill, Props}
-import akka.testkit.TestFSMRef
-import eu.semberal.dbstress.AbstractActorSystemTest
+import akka.actor.{ActorSystem, PoisonPill, Props}
+import akka.testkit.{ImplicitSender, TestFSMRef, TestKit}
 import eu.semberal.dbstress.actor.DbCommunicationActor.{InitDbConnection, NextRound}
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
 import eu.semberal.dbstress.model.Configuration.DbCommunicationConfig
 import eu.semberal.dbstress.model.Results._
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.duration.DurationDouble
 
-class DbCommunicationActorTest extends AbstractActorSystemTest with MockFactory {
+class DbCommunicationActorTest
+  extends TestKit(ActorSystem())
+  with FlatSpecLike
+  with Matchers
+  with ImplicitSender
+  with BeforeAndAfterAll with MockFactory {
+
+  override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
   trait actorScope {
     protected def dbCommunicationConfig: DbCommunicationConfig
@@ -23,15 +30,16 @@ class DbCommunicationActorTest extends AbstractActorSystemTest with MockFactory 
   }
 
   "DbCommunicationActor" should "report failed connection init when db config if wrong" in new actorScope {
-      val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", None, None)
-      actor ! InitDbConnection
-      expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitFailure(_, _, _)) =>}
-    }
+    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", None, None)
+    actor ! InitDbConnection
+    expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitFailure(_, _, _)) =>}
+  }
 
   it should "successfully initialize a connection when db config is correct" in
     new actorScope {
       def dbCommunicationConfig =
         DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", None, None)
+
       actor ! InitDbConnection
       expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitSuccess(_, _)) =>}
     }
@@ -39,6 +47,7 @@ class DbCommunicationActorTest extends AbstractActorSystemTest with MockFactory 
   it should "correctly report db call result" in new actorScope {
     def dbCommunicationConfig: DbCommunicationConfig =
       DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", None, None)
+
     actor ! InitDbConnection
     receiveOne(5.seconds)
     actor ! NextRound
@@ -49,6 +58,7 @@ class DbCommunicationActorTest extends AbstractActorSystemTest with MockFactory 
     def dbCommunicationConfig: DbCommunicationConfig = DbCommunicationConfig(
       "jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "",
       "CREATE ALIAS SLEEP1 FOR \"java.lang.Thread.sleep(long)\"; CALL SLEEP1(2000);", None, Some(1000))
+
     actor ! InitDbConnection
     receiveOne(5.seconds)
     actor ! NextRound
@@ -59,6 +69,7 @@ class DbCommunicationActorTest extends AbstractActorSystemTest with MockFactory 
     def dbCommunicationConfig: DbCommunicationConfig = DbCommunicationConfig(
       "jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "",
       "CREATE ALIAS SLEEP2 FOR \"java.lang.Thread.sleep(long)\"; CALL SLEEP2(500);", None, Some(1000))
+
     actor ! InitDbConnection
     receiveOne(5.seconds)
     actor ! NextRound

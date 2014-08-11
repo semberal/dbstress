@@ -2,17 +2,25 @@ package eu.semberal.dbstress.actor
 
 import java.io.File
 
-import akka.actor.Status
+import akka.actor.{ActorSystem, Status}
 import akka.pattern.ask
+import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
-import eu.semberal.dbstress.AbstractActorSystemTest
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
 import eu.semberal.dbstress.model.Results.ScenarioResult
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
 import scala.concurrent.duration.DurationLong
 
-class ResultsExporterActorTest extends AbstractActorSystemTest with ScalaFutures {
+class ResultsExporterActorTest
+  extends TestKit(ActorSystem())
+  with FlatSpecLike
+  with Matchers
+  with ImplicitSender
+  with BeforeAndAfterAll with ScalaFutures {
+
+  override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
   trait failedActorScope {
     val actor = system.actorOf(ResultsExporterActor.defaultProps(new File("/root")))

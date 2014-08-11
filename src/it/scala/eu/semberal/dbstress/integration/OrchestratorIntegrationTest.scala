@@ -4,15 +4,25 @@ import java.io.{File, FilenameFilter, InputStreamReader}
 import java.lang.System.currentTimeMillis
 import java.nio.file.Files.createTempDirectory
 
+import akka.actor.ActorSystem
+import akka.testkit.{ImplicitSender, TestKit}
+import eu.semberal.dbstress.Orchestrator
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
-import eu.semberal.dbstress.{AbstractActorSystemTest, Orchestrator}
+import org.scalatest.{BeforeAndAfterAll, Matchers, FlatSpecLike}
 import play.api.libs.json.{JsArray, JsNumber, JsObject, Json}
 import resource.managed
 
 import scala.concurrent.duration.DurationLong
 import scala.io.Source
 
-class OrchestratorIntegrationTest extends AbstractActorSystemTest {
+class OrchestratorIntegrationTest
+  extends TestKit(ActorSystem())
+  with FlatSpecLike
+  with Matchers
+  with ImplicitSender
+  with BeforeAndAfterAll {
+
+  override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
   def withTempDir(testCode: File => Unit): Unit = {
     val file = createTempDirectory(s"dbstress_OrchestratorTest_${currentTimeMillis()}_").toFile
@@ -30,7 +40,7 @@ class OrchestratorIntegrationTest extends AbstractActorSystemTest {
     val reader = new InputStreamReader(getClass.getClassLoader.getResourceAsStream("config1.yaml"))
     val config = parseConfigurationYaml(reader).right.get
     new Orchestrator(tmpDir).run(config, system)
-    system.awaitTermination(10.seconds)
+    system.awaitTermination(20.seconds)
 
     /* Test generated JSON */
     val jsonFiles = tmpDir.listFiles(new FilenameFilter {
