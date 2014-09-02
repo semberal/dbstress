@@ -34,7 +34,7 @@ You can also run the application from the cloned Github repository using [sbt](h
 
 ```bash
 git clone git@github.com:semberal/dbstress.git
-sbt run -c /path/to/scenario_config.yaml -o /output/directory
+sbt "run -c /path/to/scenario_config.yaml -o /path/to/output_directory"
 ```
 
 ## Terminology and the test scenario description
