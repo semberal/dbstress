@@ -26,7 +26,7 @@ bin/dbstress.sh -c /path/to/scenario_config.yaml -o /output/directory
 ```
 (Windows users should use the executable `dbstress.bat` script, instead).
 
-Scenario configuration is a [YAML](http://www.yaml.org/start.html) file ([example](https://github.com/semberal/dbstress/blob/master/src/test/resources/config1.yaml)) describing various aspects of the performance/stress test itself, such as database connection information, number of parallel connections, number of repeats, timeouts, etc.
+Scenario configuration is a [YAML](http://www.yaml.org/start.html) file ([example](https://github.com/semberal/dbstress/blob/master/src/it/resources/config1.yaml)) describing various aspects of the performance/stress test itself, such as database connection information, number of parallel connections, number of repeats, timeouts, etc.
 
 Output directory specifies the directory the results should be exported to.
 
