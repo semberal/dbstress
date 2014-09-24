@@ -19,10 +19,10 @@ object ConfigParser {
       (e, acc) => for (xs <- acc.right; x <- e.right) yield x :: xs
     }
 
-  def parseConfigurationYaml(f: File): Either[String, ScenarioConfig] =
-    parseConfigurationYaml(new BufferedReader(new FileReader(f)))
+  def parseConfigurationYaml(f: File, defaultPassword: Option[String]): Either[String, ScenarioConfig] =
+    parseConfigurationYaml(new BufferedReader(new FileReader(f)), defaultPassword)
 
-  def parseConfigurationYaml(reader: Reader): Either[String, ScenarioConfig] = {
+  def parseConfigurationYaml(reader: Reader, defaultPassword: Option[String]): Either[String, ScenarioConfig] = {
 
     def isStringNonEmpty(s: String): Boolean = Option(s).getOrElse("").length > 0
 
@@ -38,7 +38,7 @@ object ConfigParser {
             uri <- loadFromMap[String, String](map, "uri")(isStringNonEmpty).right
             driverClass <- loadFromMapOptional[String, String](map, "driver_class")(isStringNonEmpty).right
             username <- loadFromMap[String, String](map, "username")(isStringNonEmpty).right
-            password <- loadFromMap[String, String](map, "password")().right
+            password <- loadFromMap[String, String](map, "password", defaultPassword)().right
             query <- loadFromMap[String, String](map, "query")(isStringNonEmpty).right
             connectionTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "connection_timeout")(_ > 0).right
             queryTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "query_timeout")(_ > 0).right
@@ -71,20 +71,20 @@ object ConfigParser {
     }
   }
 
-  private[this] def loadFromMap[T, U <% T : ClassTag](map: Map[String, Any], key: String)
+  private[this] def loadFromMap[T, U <% T : ClassTag](map: Map[String, Any], key: String, default: Option[T] = None)
                                             (validation: T => Boolean = (_: T) => true): Either[String, T] = {
-    loadFromMapOptional[T, U](map, key)(validation) match {
+    loadFromMapOptional[T, U](map, key, default)(validation) match {
       case Right(None) => Left(s"Configuration property $key is missing")
       case Left(x) => Left(x)
       case Right(Some(x)) => Right(x)
     }
   }
 
-  private[this] def loadFromMapOptional[T, U <% T : ClassTag](map: Map[String, Any], key: String)
+  private[this] def loadFromMapOptional[T, U <% T : ClassTag](map: Map[String, Any], key: String, default: Option[T] = None)
                                                     (validationIfPresent: T => Boolean = (_: T) => true): Either[String, Option[T]] = {
     val rtc = implicitly[ClassTag[U]].runtimeClass
     map.get(key) match {
-      case None => Right(None)
+      case None => Right(default)
       case Some(x) if !rtc.isInstance(x) => Left( s"""Value "$x" does conform to the expected type: "${rtc.getSimpleName}"""")
       case Some(x: U) if !validationIfPresent(x) => Left( s"""Invalid value "$x" for configuration entry: "$key"""")
       case Some(x: U) => Right(Some(x))

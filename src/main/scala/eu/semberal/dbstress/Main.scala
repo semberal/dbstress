@@ -11,7 +11,7 @@ import scopt.OptionParser
 
 object Main extends LazyLogging {
 
-  case class CmdLineArguments(configFile: File = null, outputDir: File = null, maxDbWorkerThreads: Option[Int] = None)
+  case class CmdLineArguments(configFile: File = null, outputDir: File = null, maxDbWorkerThreads: Option[Int] = None, dbPassword: Option[String] = None)
 
   def main(args: Array[String]): Unit = {
     val parser = new OptionParser[CmdLineArguments]("dbstress") {
@@ -44,6 +44,10 @@ object Main extends LazyLogging {
         case _ => success
       }
 
+      opt[String]('p', "password").valueName("DB_PASSWORD").text("Password to be used for database connections across all units").action { (x, c) =>
+        c.copy(dbPassword = Some(x))
+      }
+
       version("version").text("Show application version")
       help("help").text("Show help")
 
@@ -51,7 +55,7 @@ object Main extends LazyLogging {
     }
 
     parser.parse(args, CmdLineArguments()) match {
-      case Some(CmdLineArguments(configFile, outputDir, maxDbWorkersThreads)) => parseConfigurationYaml(configFile) match {
+      case Some(CmdLineArguments(configFile, outputDir, maxDbWorkersThreads, dbPassword)) => parseConfigurationYaml(configFile, dbPassword) match {
         case Right(sc) =>
           val minConn: Int = sc.units.map(_.parallelConnections).sum
           val maxConn: Int = {

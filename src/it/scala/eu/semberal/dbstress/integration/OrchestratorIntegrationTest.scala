@@ -38,7 +38,7 @@ class OrchestratorIntegrationTest
 
   "Orchestrator" should "successfully launch the application and check results" in withTempDir { tmpDir =>
     val reader = new InputStreamReader(getClass.getClassLoader.getResourceAsStream("config1.yaml"))
-    val config = parseConfigurationYaml(reader).right.get
+    val config = parseConfigurationYaml(reader, Some("")).right.get
     new Orchestrator(tmpDir).run(config, system)
     system.awaitTermination(20.seconds)
 
