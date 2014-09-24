@@ -218,7 +218,6 @@ object JsonSupportTest {
         "uri" -> JsString("A"),
         "driverClass" -> JsString("B"),
         "username" -> JsString("C"),
-        "password" -> JsString("D"),
         "query" -> JsString("E"),
         "connectionTimeout" -> JsNumber(10),
         "queryTimeout" -> JsNumber(15)

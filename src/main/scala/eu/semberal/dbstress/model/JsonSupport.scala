@@ -1,7 +1,8 @@
 package eu.semberal.dbstress.model
 
 import eu.semberal.dbstress.Defaults._
-import eu.semberal.dbstress.model.Configuration.{DbCommunicationConfig, UnitConfig, UnitRunConfig}
+import eu.semberal.dbstress.model.Configuration.{DbCommunicationConfigWithoutPassword, DbCommunicationConfig,
+UnitConfig, UnitRunConfig}
 import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.util.ModelExtensions._
 import org.joda.time.Duration
@@ -68,10 +69,9 @@ object JsonSupport {
     ((__ \ "uri").write[String] ~
       (__ \ "driverClass").writeNullable[String] ~
       (__ \ "username").write[String] ~
-      (__ \ "password").write[String] ~
       (__ \ "query").write[String] ~
       (__ \ "connectionTimeout").writeNullable[Int] ~
-      (__ \ "queryTimeout").writeNullable[Int]) apply unlift(DbCommunicationConfig.unapply)
+      (__ \ "queryTimeout").writeNullable[Int]) apply unlift(DbCommunicationConfigWithoutPassword.unapply)
 
   implicit val unitRunConfigWrites: Writes[UnitRunConfig] =
     ((__ \ "databaseConfig").write[DbCommunicationConfig] ~
