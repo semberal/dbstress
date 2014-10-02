@@ -45,7 +45,7 @@ object ConfigParser {
 
             repeats <- loadFromMap[Int, java.lang.Integer](map, "repeats")(_ > 0).right
 
-            unitName <- loadFromMap[String, String](map, "unit_name")(isStringNonEmpty).right
+            unitName <- loadFromMap[String, String](map, "unit_name")(x => isStringNonEmpty(x) && x.matches("[a-zA-Z0-9]+")).right
             description <- loadFromMapOptional[String, String](map, "description")().right
             parallelConnections <- loadFromMap[Int, java.lang.Integer](map, "parallel_connections")(_ > 0).right
           } yield {

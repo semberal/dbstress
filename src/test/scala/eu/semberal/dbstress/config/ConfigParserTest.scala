@@ -1,20 +1,18 @@
 package eu.semberal.dbstress.config
 
+import java.io.InputStreamReader
+
 import org.scalatest.{Matchers, FlatSpec}
 import scala.reflect.ClassTag
+import resource._
 
 class ConfigParserTest extends FlatSpec with Matchers {
-  "ClassTag" should "behave as expected for int type" in {
-    val rtc = implicitly[ClassTag[java.lang.Integer]].runtimeClass
-    rtc.isInstance(4) should be(true)
-    rtc.isInstance(new java.lang.Integer(45)) should be(true)
-    rtc.isInstance(null) should be(false)
-  }
 
-  it should "behave as expected for String type" in {
-    val rtc = implicitly[ClassTag[String]].runtimeClass
-    rtc.isInstance("foobar") should be(true)
-    rtc.isInstance("") should be(true)
-    rtc.isInstance(null) should be(false)
+  "ConfigParser" should "correctly reject an unit with non-alphanumeric characters in the name" in {
+    val stream = this.getClass.getClassLoader.getResourceAsStream("test_config2.yaml")
+    managed(new InputStreamReader(stream)).foreach { reader =>
+      val result = ConfigParser.parseConfigurationYaml(reader)
+      result should be(Left(s"""Invalid value "Foo Bar" for configuration entry: "unit_name""""))
+    }
   }
 }

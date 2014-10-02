@@ -45,7 +45,7 @@ All configured units within a scenario run in parallel, independently of each ot
 
 The following unit parameters have to be specified in the YAML document:
 
-* Unit name
+* Unit name (must be an alphanumeric string)
 * Description (Optional)
 * Database query to be performed
 * JDBC connection string
