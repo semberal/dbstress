@@ -1,0 +1,9 @@
+---
+unit_name: Foo Bar
+description: Example of a unit with non-alphanumeric name
+query: "select 1"
+uri: "jdbc:h2:mem://localhost"
+username: sa
+password: ""
+parallel_connections: 18
+repeats: 30
