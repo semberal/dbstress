@@ -7,7 +7,7 @@
 * #7: Apache2 license
 * #11: Illegal actor name (unit name) encountered
 * #12: Add default password support from cmd and remove passwords from output files
-
+* Additional minor fixes and tweaks
 
 ## 1.0.0-beta1
 * Initial application release
