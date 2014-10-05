@@ -31,7 +31,7 @@ val testDependencies = Seq(
 lazy val root = (project in file(".")).settings(
   organization := "eu.semberal",
   name := "dbstress",
-  version := "1.0.0-beta2-SNAPSHOT",
+  version := "1.0.0-beta2",
   scalaVersion := "2.11.2",
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
 ).settings(resolvers ++= Seq(
@@ -39,6 +39,3 @@ lazy val root = (project in file(".")).settings(
 )).configs(IntegrationTest).settings(Defaults.itSettings: _*)
   .settings(packSettings: _*).settings(packMain := Map("dbstress" -> "eu.semberal.dbstress.Main"))
   .settings(libraryDependencies ++= (compileDependencies ++ runtimeDependencies ++ testDependencies): _*)
-
-
-
