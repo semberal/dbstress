@@ -8,6 +8,7 @@ import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.Timeout
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
 import eu.semberal.dbstress.model.Results.ScenarioResult
+import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
@@ -23,7 +24,9 @@ class ResultsExporterActorTest
   override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
   trait failedActorScope {
-    val actor = system.actorOf(ResultsExporterActor.defaultProps(new File("/root")))
+    val outputDir: File = new File("/root")
+    val exports: List[ResultsExport] = new JsonResultsExport(outputDir) :: new CsvResultsExport(outputDir) :: Nil
+    val actor = system.actorOf(ResultsExporterActor.defaultProps(exports))
   }
 
   "ResultsExporterActor" should "respond with exception when an error occurs" in new failedActorScope {

@@ -32,9 +32,8 @@ class ResultsExporterActor(resultsExport: Seq[ResultsExport]) extends Actor {
 
 object ResultsExporterActor {
 
-  def defaultProps(outputDir: File) = {
-    val defaultResultExporters = new JsonResultsExport(outputDir) :: new CsvResultsExport(outputDir) :: Nil
-    Props(classOf[ResultsExporterActor], defaultResultExporters)
+  def defaultProps(resultExports: List[ResultsExport]) = {
+    Props(classOf[ResultsExporterActor], resultExports)
   }
 
   case class ExportResults(scenarioResult: ScenarioResult)

@@ -8,6 +8,7 @@ import akka.actor.ActorSystem
 import akka.testkit.{ImplicitSender, TestKit}
 import eu.semberal.dbstress.Orchestrator
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
+import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
 import org.scalatest.{BeforeAndAfterAll, Matchers, FlatSpecLike}
 import play.api.libs.json.{JsArray, JsNumber, JsObject, Json}
 import resource.managed
@@ -39,7 +40,8 @@ class OrchestratorIntegrationTest
   "Orchestrator" should "successfully launch the application and check results" in withTempDir { tmpDir =>
     val reader = new InputStreamReader(getClass.getClassLoader.getResourceAsStream("config1.yaml"))
     val config = parseConfigurationYaml(reader, Some("")).right.get
-    new Orchestrator(tmpDir).run(config, system)
+    val exports: List[ResultsExport] = new JsonResultsExport(tmpDir) :: new CsvResultsExport(tmpDir) :: Nil
+    new Orchestrator(exports).run(config, system)
     system.awaitTermination(20.seconds)
 
     /* Test generated JSON */
