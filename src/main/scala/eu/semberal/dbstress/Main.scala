@@ -7,6 +7,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
+import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
 import scopt.OptionParser
 
 object Main extends LazyLogging {
@@ -77,7 +78,8 @@ object Main extends LazyLogging {
           }
           """)
           val system = ActorSystem("dbstressMaster", dbDispatcherConfig.withFallback(ConfigFactory.load()))
-          new Orchestrator(outputDir).run(sc, system)
+          val exports: List[ResultsExport] = new JsonResultsExport(outputDir) :: new CsvResultsExport(outputDir) :: Nil
+          new Orchestrator(exports).run(sc, system)
         case Left(msg) =>
           System.err.println(s"Configuration error: $msg")
           System.exit(2) // exit status 2 when configuration parsing error has occurred
