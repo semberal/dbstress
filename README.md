@@ -50,7 +50,7 @@ The following unit parameters have to be specified in the YAML document:
 * Database query to be performed
 * JDBC connection string
 * Database username/password (Must be present even when empty unless a default password is passed on command line)
-* JDBC driver class name (Optional, it most cases it shouldn't be necessary)
+* JDBC driver class name (Optional, in most cases it shouldn't be necessary)
 * Number of parallel database connections (i.e. simultaneous database sessions) - further referred as `PAR`
 * How many times should the query be repeated (various statistics are calculated from individual samples) - further referred as `REP`
 * Query timeout (Optional, use with caution - see the [Threading](#threading) section for details
