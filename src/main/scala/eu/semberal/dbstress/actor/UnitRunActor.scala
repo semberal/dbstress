@@ -6,6 +6,8 @@ import eu.semberal.dbstress.actor.UnitActor.{UnitRunFinished, UnitRunInitialized
 import eu.semberal.dbstress.actor.UnitRunActor._
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
+import eu.semberal.dbstress.util.IdGen
+import eu.semberal.dbstress.util.IdGen.genStatementId
 
 class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LoggingFSM[State, Option[UnitRunResult]] {
 
@@ -14,8 +16,8 @@ class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LoggingFSM[S
   startWith(Uninitialized, None)
 
   when(Uninitialized) {
-    case Event(InitUnitRun, _) =>
-      context.actorOf(Props(classOf[DbCommunicationActor], unitRunConfig.dbConfig), DbCommunicationActorName) ! InitDbConnection
+    case Event(InitUnitRun(scenarioId), _) =>
+      context.actorOf(Props(classOf[DbCommunicationActor], unitRunConfig.dbConfig, scenarioId, genStatementId()), DbCommunicationActorName) ! InitDbConnection
       goto(ConfirmationWait)
   }
 
@@ -59,7 +61,7 @@ class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LoggingFSM[S
 
 object UnitRunActor {
 
-  case object InitUnitRun
+  case class InitUnitRun(scenarioId: String)
 
   case class DbConnInitFinished(dbConnInitResult: DbConnInitResult)
 

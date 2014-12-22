@@ -1,53 +1,18 @@
 package eu.semberal.dbstress.integration
 
-import java.io.{File, FilenameFilter, InputStreamReader}
-import java.lang.System.currentTimeMillis
-import java.nio.file.Files.createTempDirectory
-
-import akka.actor.ActorSystem
-import akka.testkit.{ImplicitSender, TestKit}
-import eu.semberal.dbstress.Orchestrator
-import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
-import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
-import org.scalatest.{BeforeAndAfterAll, Matchers, FlatSpecLike}
+import akka.testkit.ImplicitSender
+import org.scalatest.{FlatSpecLike, Matchers}
 import play.api.libs.json.{JsArray, JsNumber, JsObject, Json}
 import resource.managed
 
-import scala.concurrent.duration.DurationLong
 import scala.io.Source
 
-class OrchestratorIntegrationTest
-  extends TestKit(ActorSystem())
-  with FlatSpecLike
-  with Matchers
-  with ImplicitSender
-  with BeforeAndAfterAll {
+class OrchestratorIntegrationTest extends FlatSpecLike with Matchers with ImplicitSender with AbstractDbstressIntegrationTest {
 
-  override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
-
-  def withTempDir(testCode: File => Unit): Unit = {
-    val file = createTempDirectory(s"dbstress_OrchestratorTest_${currentTimeMillis()}_").toFile
-    try {
-      testCode(file)
-    } finally {
-      //      file.deleteRecursively() match {
-      //        case Left(msg) => logger.warn(s"Unable to delete temporary test directory ${file.getAbsolutePath}: $msg")
-      //        case _ =>
-      //      }
-    }
-  }
-
-  "Orchestrator" should "successfully launch the application and check results" in withTempDir { tmpDir =>
-    val reader = new InputStreamReader(getClass.getClassLoader.getResourceAsStream("config1.yaml"))
-    val config = parseConfigurationYaml(reader, Some("")).right.get
-    val exports: List[ResultsExport] = new JsonResultsExport(tmpDir) :: new CsvResultsExport(tmpDir) :: Nil
-    new Orchestrator(exports).run(config, system)
-    system.awaitTermination(20.seconds)
-
+  "Orchestrator" should "successfully launch the application and check results" in {
+    val tmpDir = executeTest("config1.yaml")
     /* Test generated JSON */
-    val jsonFiles = tmpDir.listFiles(new FilenameFilter {
-      override def accept(dir: File, name: String): Boolean = name.endsWith(".json")
-    })
+    val jsonFiles = tmpDir.listFiles(jsonFilter)
     jsonFiles should have size 1
 
     managed(Source.fromFile(jsonFiles.head)) foreach { source =>
@@ -65,16 +30,11 @@ class OrchestratorIntegrationTest
       m.get("unit1").get \ "expectedDbCalls" should be(JsNumber(540))
       m.get("unit1").get \ "dbCalls" \ "executed" \ "count" should be(JsNumber(540))
       m.get("unit1").get \ "dbCalls" \ "executed" \ "successful" \ "count" should be(JsNumber(540))
-
     }
 
     /* Test generated CSV file*/
-    val csvFiles = tmpDir.listFiles(new FilenameFilter {
-      override def accept(dir: File, name: String): Boolean = name.endsWith(".csv")
-    })
-
+    val csvFiles = tmpDir.listFiles(csvFilter)
     csvFiles should have size 1
-
     managed(Source.fromFile(csvFiles.head)) foreach { source =>
       val lines = source.getLines().toList
       lines should have size 7

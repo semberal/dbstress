@@ -12,10 +12,10 @@ class UnitActor(unitConfig: UnitConfig) extends Actor with LoggingFSM[State, Dat
   startWith(Uninitialized, No)
 
   when(Uninitialized) {
-    case Event(InitUnit, _) =>
+    case Event(InitUnit(scenarioId), _) =>
       (1 to unitConfig.parallelConnections).map(i => {
         val actor = context.actorOf(Props(classOf[UnitRunActor], unitConfig.config), s"run$i")
-        actor ! InitUnitRun
+        actor ! InitUnitRun(scenarioId)
       })
       goto(InitConfirmationsWait) using RemainingInitUnitRunConfirmations(unitConfig.parallelConnections)
   }
@@ -54,7 +54,7 @@ class UnitActor(unitConfig: UnitConfig) extends Actor with LoggingFSM[State, Dat
 
 object UnitActor {
 
-  case object InitUnit
+  case class InitUnit(scenarioId: String)
 
   case object UnitRunInitialized
 

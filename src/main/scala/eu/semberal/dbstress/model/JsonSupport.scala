@@ -11,17 +11,22 @@ import play.api.libs.json._
 
 object JsonSupport {
 
+  implicit val dbCallIdWrites: Writes[DbCallId] = new Writes[DbCallId] {
+    override def writes(o: DbCallId): JsValue = JsString(o.toString)
+  }
+
   implicit val dbCallResultWrites: Writes[DbCallResult] =
     ((__ \ "successful").write[Boolean] ~
       (__ \ "errorMessage").writeNullable[String] ~
       (__ \ "statementResult").writeNullable[JsObject] ~
       (__ \ "callStart").write[String] ~
       (__ \ "callEnd").write[String] ~
-      (__ \ "duration").write[Long]) apply (_ match {
-      case DbCallSuccess(start, finish, stmtResult) =>
-        (true, None, Some(toJsObject(stmtResult)), dateTimeFormat.print(start), dateTimeFormat.print(finish), new Duration(start, finish).getMillis)
-      case DbCallFailure(start, finish, e) =>
-        (false, Some(e.toString), None, dateTimeFormat.print(start), dateTimeFormat.print(finish), new Duration(start, finish).getMillis)
+      (__ \ "duration").write[Long] ~
+      (__ \ "callId").write[DbCallId]) apply (_ match {
+      case DbCallSuccess(start, finish, dbCallId, stmtResult) =>
+        (true, None, Some(toJsObject(stmtResult)), dateTimeFormat.print(start), dateTimeFormat.print(finish), new Duration(start, finish).getMillis, dbCallId)
+      case DbCallFailure(start, finish, dbCallId, e) =>
+        (false, Some(e.toString), None, dateTimeFormat.print(start), dateTimeFormat.print(finish), new Duration(start, finish).getMillis, dbCallId)
     })
 
   implicit val dbConnectionInitResultWrites: Writes[DbConnInitResult] =

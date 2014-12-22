@@ -1,7 +1,7 @@
 import sbt.Keys._
 
 val akkaVersion = "2.3.5"
-val scalamockVersion = "3.1.2"
+val scalamockVersion = "3.2.1"
 
 val compileDependencies = Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
@@ -12,7 +12,8 @@ val compileDependencies = Seq(
   "com.jsuereth" %% "scala-arm" % "1.4",
   "org.scalanlp" %% "breeze" % "0.9" exclude("com.github.rwl", "jtransforms"),
   "com.typesafe.play" %% "play-json" % "2.3.3",
-  "com.github.scopt" %% "scopt" % "3.2.0"
+  "com.github.scopt" %% "scopt" % "3.2.0",
+  "org.apache.commons" % "commons-lang3" % "3.3.2"
 )
 
 val runtimeDependencies = Seq(

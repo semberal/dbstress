@@ -10,6 +10,7 @@ import eu.semberal.dbstress.actor.DbCommunicationActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
+import eu.semberal.dbstress.util.IdGen._
 import eu.semberal.dbstress.util.ModelExtensions.ArmManagedResource
 import org.joda.time.DateTime.now
 import resource._
@@ -18,7 +19,7 @@ import scala.concurrent.duration.DurationDouble
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-class DbCommunicationActor(dbConfig: DbCommunicationConfig)
+class DbCommunicationActor(dbConfig: DbCommunicationConfig, scenarioId: String, connectionId: String)
   extends Actor
   with LazyLogging
   with LoggingFSM[State, Option[Connection]] {
@@ -58,12 +59,16 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig)
     case Event(NextRound, connection) =>
       val start = now()
 
+      val dbCallId = DbCallId(scenarioId, connectionId, genStatementId())
+      val query = dbConfig.query.replace(IdPlaceholder, dbCallId.toString)
+
       val futuresList = {
         val dbFuture = Future {
           val futStart = now()
           val statementResult = connection.map { conn =>
             managed(conn.createStatement()).map({ statement =>
-              if (statement.execute(dbConfig.query)) {
+
+              if (statement.execute(query)) {
                 val resultSet = statement.getResultSet
                 val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
                 FetchedRows(fetchedRows)
@@ -91,9 +96,9 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig)
 
       Future.firstCompletedOf(futuresList).onComplete {
         case Success((s, e, fetched)) =>
-          currentSender ! DbCallFinished(DbCallSuccess(s, e, fetched))
+          currentSender ! DbCallFinished(DbCallSuccess(s, e, dbCallId, fetched))
         case Failure(e) =>
-          currentSender ! DbCallFinished(DbCallFailure(start, now(), e))
+          currentSender ! DbCallFinished(DbCallFailure(start, now(), dbCallId, e))
       }
       stay()
   }
@@ -123,6 +128,6 @@ object DbCommunicationActor {
 
   protected case object Uninitialized extends State
 
-  protected case object WaitForJob extends State
+  protected[dbstress] case object WaitForJob extends State
 
 }

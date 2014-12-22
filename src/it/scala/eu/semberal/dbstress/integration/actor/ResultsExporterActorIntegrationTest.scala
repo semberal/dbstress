@@ -1,29 +1,24 @@
-package eu.semberal.dbstress.actor
+package eu.semberal.dbstress.integration.actor
 
 import java.io.File
 
-import akka.actor.{ActorSystem, Status}
+import akka.actor.Status
 import akka.pattern.ask
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.testkit.ImplicitSender
 import akka.util.Timeout
+import eu.semberal.dbstress.actor.ResultsExporterActor
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
+import eu.semberal.dbstress.integration.AbstractDbstressIntegrationTest
 import eu.semberal.dbstress.model.Results.ScenarioResult
 import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
+import org.scalatest.{FlatSpecLike, Matchers}
 
 import scala.concurrent.duration.DurationLong
 
-class ResultsExporterActorTest
-  extends TestKit(ActorSystem())
-  with FlatSpecLike
-  with Matchers
-  with ImplicitSender
-  with BeforeAndAfterAll with ScalaFutures {
+class ResultsExporterActorIntegrationTest extends FlatSpecLike with Matchers with ImplicitSender with ScalaFutures with AbstractDbstressIntegrationTest {
 
-  override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
-
-  trait failedActorScope {
+  private trait failedActorScope {
     val outputDir: File = new File("/root")
     val exports: List[ResultsExport] = new JsonResultsExport(outputDir) :: new CsvResultsExport(outputDir) :: Nil
     val actor = system.actorOf(ResultsExporterActor.defaultProps(exports))
