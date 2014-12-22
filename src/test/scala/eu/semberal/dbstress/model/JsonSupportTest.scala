@@ -14,17 +14,17 @@ class JsonSupportTest extends FlatSpec with Matchers {
   behavior of "DbCallResult json writer"
 
   it should "correctly serialize the DbCallSuccess model object with update count" in {
-    val model = DbCallSuccess(start, end, UpdateCount(12))
+    val model = DbCallSuccess(start, end, DbCallId("1", "2", "3"), UpdateCount(12))
     toJson(model) should be(expectedDbCallSuccessWithUpdateCount)
   }
 
   it should "correctly serialize the DbCallSuccess model object with fetched rows" in {
-    val model = DbCallSuccess(start, end, FetchedRows(10))
+    val model = DbCallSuccess(start, end, DbCallId("1", "2", "3"), FetchedRows(10))
     toJson(model) should be(expectedDbCallSuccessWithFetchedRows)
   }
 
   it should "correctly serialize the DbCallFailure model object" in {
-    val model = DbCallFailure(start, end, ex)
+    val model = DbCallFailure(start, end, DbCallId("1", "2", "3"), ex)
     toJson(model) should be(expectedDbCallFailure)
   }
 
@@ -38,7 +38,7 @@ class JsonSupportTest extends FlatSpec with Matchers {
     val expected = JsObject(Seq(
       "duration" -> JsNumber(duration),
       "initStart" -> JsString(startStr),
-      "successful" -> JsBoolean(false),
+      "successful" -> JsBoolean(value = false),
       "initEnd" -> JsString(endStr),
       "errorMessage" -> JsString(ex.toString)
     ))
@@ -50,7 +50,7 @@ class JsonSupportTest extends FlatSpec with Matchers {
 
     val expected = JsObject(Seq(
       "connectionInit" -> JsObject(Seq(
-        "successful" -> JsBoolean(true),
+        "successful" -> JsBoolean(value = true),
         "initStart" -> JsString(startStr),
         "initEnd" -> JsString(endStr),
         "duration" -> JsNumber(duration)
@@ -93,8 +93,12 @@ object JsonSupportTest {
   val unitName = "unit1"
   val unitDescription = "This is unit1"
 
-  val unitRunResult = UnitRunResult(DbConnInitSuccess(start, end), List(DbCallSuccess(start, end, UpdateCount(12)),
-    DbCallSuccess(start, end, FetchedRows(10)), DbCallFailure(start, end, ex)))
+  val unitRunResult = UnitRunResult(
+    DbConnInitSuccess(start, end),
+    List(
+      DbCallSuccess(start, end, DbCallId("1", "2", "3"), UpdateCount(12)),
+      DbCallSuccess(start, end, DbCallId("1", "2", "3"), FetchedRows(10)),
+      DbCallFailure(start, end, DbCallId("1", "2", "3"), ex)))
 
   val unitConfig = UnitConfig(unitName, Some(unitDescription), UnitRunConfig(DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(10), Some(15)), repeats), parallel)
 
@@ -104,7 +108,7 @@ object JsonSupportTest {
     Seq(
       "duration" -> JsNumber(duration),
       "initStart" -> JsString(startStr),
-      "successful" -> JsBoolean(true),
+      "successful" -> JsBoolean(value = true),
       "initEnd" -> JsString(endStr)
     )
   )
@@ -112,9 +116,10 @@ object JsonSupportTest {
   val expectedDbCallSuccessWithUpdateCount = JsObject(
     Seq(
       "callStart" -> JsString(startStr),
-      "successful" -> JsBoolean(true),
+      "successful" -> JsBoolean(value = true),
       "callEnd" -> JsString(endStr),
       "duration" -> JsNumber(duration),
+      "callId" -> JsString("1_2_3"),
       "statementResult" -> JsObject(Seq(
         "updateCount" -> JsNumber(12)
       ))
@@ -124,9 +129,10 @@ object JsonSupportTest {
   val expectedDbCallSuccessWithFetchedRows = JsObject(
     Seq(
       "callStart" -> JsString(startStr),
-      "successful" -> JsBoolean(true),
+      "successful" -> JsBoolean(value = true),
       "callEnd" -> JsString(endStr),
       "duration" -> JsNumber(duration),
+      "callId" -> JsString("1_2_3"),
       "statementResult" -> JsObject(Seq(
         "fetchedRows" -> JsNumber(10)
       ))
@@ -138,8 +144,9 @@ object JsonSupportTest {
       "errorMessage" -> JsString(ex.toString),
       "duration" -> JsNumber(duration),
       "callStart" -> JsString(startStr),
-      "successful" -> JsBoolean(false),
-      "callEnd" -> JsString(endStr)
+      "successful" -> JsBoolean(value = false),
+      "callEnd" -> JsString(endStr),
+      "callId" -> JsString("1_2_3")
     )
   )
 

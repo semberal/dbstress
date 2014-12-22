@@ -104,6 +104,37 @@ Why are the minimum and maximum values chosen this way? The minimum value is obv
 
 This is the reason why it is recommended to use query timeouts with great caution, timeouted queries will be correctly reported in the scenario results, the database operations, however, will not be interrupted and thus create additional database load which, consequently, can lead to biased results.
 
+### Database calls labelling
+
+In order to identify individual database calls in the server logs, you might want to place a random identifier into each query. _dbstress_ supports query labeling with the `@@gen_query_id@@` placeholder. Each occurrence of such placeholder will be replaced with a unique identifier consisting of the following underscore-separated components:
+
+* Scenario ID
+* Connection ID
+* Query ID
+
+*Please note these components don't reflect the logical scenario organization (i.e. units). It is, therefore, not possible to grep for all queries from a single unit (unless the unit only contains one connection).*
+
+So, when the database call result (only present in the detailed JSON output) contains the following line: `"callId" : "UUii_DmYt_Vydm"`, the scenario, connection and query identifiers are `UUii`, `DmYt` and `Vydm`, respectively. You can grep server logs to identify each individual query, all queries from a single scenario run or all queries within a single database connection.
+
+Here is an example unit configuration:
+
+```yaml
+---
+unit_name: unit1
+description: Example of a successful unit
+query: "select /*+label(@@gen_query_id@@) */ 1"
+uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
+username: sa
+password: ""
+parallel_connections: 2
+repeats: 5
+connection_timeout: 500
+query_timeout: 500
+```
+
+To illustrate how can such labeling can be useful, let's consider debugging and profiling [query labels](https://my.vertica.com/docs/7.1.x/HTML/Content/Authoring/AdministratorsGuide/Profiling/HowToLabelQueriesForProfiling.htm) of HP Vertica. Labels provide an easy way how to pair the test query executions with the database server log entries.
+
 ### Error handling
 
 Various kinds of errors can occur during a scenario run, two most important categories of errors are _connection initialization errors_ and _query errors_.

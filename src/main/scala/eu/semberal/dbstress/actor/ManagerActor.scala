@@ -13,6 +13,10 @@ import eu.semberal.dbstress.actor.TerminatorActor.ScenarioCompleted
 import eu.semberal.dbstress.actor.UnitActor.{InitUnit, StartUnit}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
+import eu.semberal.dbstress.util.IdGen
+import eu.semberal.dbstress.util.IdGen.genScenarioId
+import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric
 
 class ManagerActor(scenario: ScenarioConfig,
                    resultsExporter: ActorRef,
@@ -23,8 +27,9 @@ class ManagerActor(scenario: ScenarioConfig,
   when(Uninitialized) {
     case Event(RunScenario, _) =>
       logger.info("Starting units initialization")
+      val scenarioId = genScenarioId()
       scenario.units.foreach(u => {
-        context.actorOf(Props(classOf[UnitActor], u), u.name) ! InitUnit
+        context.actorOf(Props(classOf[UnitActor], u), u.name) ! InitUnit(scenarioId)
       })
       goto(InitConfirmationsWait) using RemainingInitUnitConfirmations(scenario.units.length)
   }

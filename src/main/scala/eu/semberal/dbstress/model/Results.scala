@@ -19,11 +19,17 @@ object Results {
 
   case class DbConnInitFailure(start: DateTime, finish: DateTime, e: Throwable) extends DbConnInitResult
 
-  sealed trait DbCallResult extends OperationResult
+  sealed trait DbCallResult extends OperationResult {
+    val dbCallId: DbCallId
+  }
 
-  case class DbCallSuccess(start: DateTime, finish: DateTime, stmtResult: StatementResult) extends DbCallResult
+  case class DbCallId(scenarioId: String, connectionId: String, statementId: String) {
+    override def toString = s"${scenarioId}_${connectionId}_$statementId"
+  }
 
-  case class DbCallFailure(start: DateTime, finish: DateTime, e: Throwable) extends DbCallResult
+  case class DbCallSuccess(start: DateTime, finish: DateTime, dbCallId: DbCallId, stmtResult: StatementResult) extends DbCallResult
+
+  case class DbCallFailure(start: DateTime, finish: DateTime, dbCallId: DbCallId, e: Throwable) extends DbCallResult
 
   sealed trait StatementResult
 
