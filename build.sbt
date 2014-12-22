@@ -33,7 +33,7 @@ lazy val root = (project in file(".")).settings(
   organization := "eu.semberal",
   name := "dbstress",
   version := "1.0.0-beta3-SNAPSHOT",
-  scalaVersion := "2.11.2",
+  scalaVersion := "2.11.4",
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
 ).settings(resolvers ++= Seq(
   "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
