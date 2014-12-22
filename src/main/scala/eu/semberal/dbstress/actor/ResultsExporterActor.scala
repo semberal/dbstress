@@ -1,12 +1,10 @@
 package eu.semberal.dbstress.actor
 
-import java.io.File
-
-import akka.actor.{Props, Actor, Status}
+import akka.actor.{Actor, Props, Status}
 import eu.semberal.dbstress.actor.ManagerActor.ResultsExported
 import eu.semberal.dbstress.actor.ResultsExporterActor.ExportResults
 import eu.semberal.dbstress.model.Results.ScenarioResult
-import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
+import eu.semberal.dbstress.util.ResultsExport
 
 import scala.concurrent.Future
 import scala.concurrent.Future.sequence
