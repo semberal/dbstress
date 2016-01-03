@@ -10,9 +10,9 @@ val compileDependencies = Seq(
   "joda-time" % "joda-time" % "2.9.1",
   "org.yaml" % "snakeyaml" % "1.16",
   "com.jsuereth" %% "scala-arm" % "1.4",
-  "org.scalanlp" %% "breeze" % "0.9" exclude("com.github.rwl", "jtransforms"),
-  "com.typesafe.play" %% "play-json" % "2.3.3",
-  "com.github.scopt" %% "scopt" % "3.2.0",
+  "org.scalanlp" %% "breeze" % "0.11.2" exclude("com.github.rwl", "jtransforms"),
+  "com.typesafe.play" %% "play-json" % "2.3.10",
+  "com.github.scopt" %% "scopt" % "3.3.0",
   "org.apache.commons" % "commons-lang3" % "3.4"
 )
 
