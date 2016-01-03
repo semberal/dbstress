@@ -2,13 +2,18 @@ package eu.semberal.dbstress
 
 import java.io.File
 import java.lang.Math.{max, min}
+import java.util.concurrent.TimeoutException
 
 import akka.actor.ActorSystem
+import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
 import scopt.OptionParser
+
+import scala.concurrent.ExecutionContext.Implicits
+import scala.concurrent.{Await, Future}
 
 object Main extends LazyLogging {
 
@@ -65,7 +70,8 @@ object Main extends LazyLogging {
           }
 
           logger.info(s"Database worker threads count: default=$minConn max=$maxConn")
-          val dbDispatcherConfig = ConfigFactory.parseString( s"""
+          val dbDispatcherConfig = ConfigFactory.parseString(
+            s"""
           akka {
             dispatchers {
               db-dispatcher {
@@ -79,7 +85,24 @@ object Main extends LazyLogging {
           """)
           val system = ActorSystem("dbstressMaster", dbDispatcherConfig.withFallback(ConfigFactory.load()))
           val exports: List[ResultsExport] = new JsonResultsExport(outputDir) :: new CsvResultsExport(outputDir) :: Nil
-          new Orchestrator(exports).run(sc, system)
+          val future: Future[Unit] = new Orchestrator(system).run(sc, exports)
+
+          try {
+            Await.result(future, Defaults.ScenarioTimeout)
+            logger.info("Scenario has successfully completed")
+          } catch {
+            case e: TimeoutException => logger.warn("Scenario has time out") // todo msg
+            case e: Exception => logger.warn("Exception during scenario execution", e)
+          }
+
+          logger.info("Shutting down the actor system")
+          try {
+            Await.result(system.terminate(), Defaults.ActorSystemShutdownTimeout)
+            logger.info(s"Actor system has been shut down")
+          } catch {
+            case e: TimeoutException => logger.warn("Unable to shutdown the actor system within the specified time limit")
+            case e: Exception => logger.warn("Exception during actor system shutdown has occurred", e)
+          }
         case Left(msg) =>
           System.err.println(s"Configuration error: $msg")
           System.exit(2) // exit status 2 when configuration parsing error has occurred

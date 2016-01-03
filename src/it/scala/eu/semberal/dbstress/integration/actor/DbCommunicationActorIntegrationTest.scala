@@ -1,7 +1,7 @@
 package eu.semberal.dbstress.integration.actor
 
 import java.sql.{Connection, Statement}
-import java.util.concurrent.TimeoutException
+import java.util.concurrent.{TimeUnit, TimeoutException}
 import java.util.regex.{Matcher, Pattern}
 
 import akka.actor.{ActorRef, PoisonPill, Props}
@@ -15,7 +15,7 @@ import eu.semberal.dbstress.model.Results._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{FlatSpecLike, Matchers}
 
-import scala.concurrent.duration.DurationDouble
+import scala.concurrent.duration.{FiniteDuration, DurationDouble}
 
 class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers with ImplicitSender with MockFactory with AbstractDbstressIntegrationTest {
 
@@ -23,6 +23,8 @@ class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers wit
     protected def dbCommunicationConfig: DbCommunicationConfig
 
     protected def actor: ActorRef
+
+    protected val msgWaitTime = FiniteDuration(3, TimeUnit.SECONDS)
   }
 
   private trait realActorScope extends actorScope {
@@ -36,7 +38,7 @@ class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers wit
   "DbCommunicationActor" should "report failed connection init when db config if wrong" in new realActorScope {
     val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", None, None)
     actor ! InitDbConnection
-    expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitFailure(_, _, _)) =>}
+    expectMsgPF(msgWaitTime) { case DbConnInitFinished(DbConnInitFailure(_, _, _)) =>}
   }
 
   it should "successfully initialize a connection when db config is correct" in new realActorScope {
@@ -44,7 +46,7 @@ class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers wit
       DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", None, None)
 
     actor ! InitDbConnection
-    expectMsgPF(5.seconds) { case DbConnInitFinished(DbConnInitSuccess(_, _)) =>}
+    expectMsgPF(msgWaitTime) { case DbConnInitFinished(DbConnInitSuccess(_, _)) =>}
   }
 
   it should "correctly report db call result" in new realActorScope {
@@ -52,9 +54,9 @@ class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers wit
       DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", "select 1", None, None)
 
     actor ! InitDbConnection
-    receiveOne(5.seconds)
+    receiveOne(msgWaitTime)
     actor ! NextRound
-    expectMsgPF(5.seconds) { case DbCallFinished(DbCallSuccess(_, _, _, FetchedRows(1))) =>}
+    expectMsgPF(msgWaitTime) { case DbCallFinished(DbCallSuccess(_, _, _, FetchedRows(1))) =>}
   }
 
   it should "correctly report db call error when the query timeouts" in new realActorScope {
@@ -63,9 +65,9 @@ class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers wit
       "CREATE ALIAS SLEEP1 FOR \"java.lang.Thread.sleep(long)\"; CALL SLEEP1(2000);", None, Some(1000))
 
     actor ! InitDbConnection
-    receiveOne(5.seconds)
+    receiveOne(msgWaitTime)
     actor ! NextRound
-    expectMsgPF(2.seconds) { case DbCallFinished(DbCallFailure(_, _, _, e)) if e.isInstanceOf[TimeoutException] =>}
+    expectMsgPF(msgWaitTime) { case DbCallFinished(DbCallFailure(_, _, _, e)) if e.isInstanceOf[TimeoutException] =>}
   }
 
   it should "report db call success when query takes some time, but doesn't timeout" in new realActorScope {
@@ -74,9 +76,9 @@ class DbCommunicationActorIntegrationTest extends FlatSpecLike with Matchers wit
     val dbCommunicationConfig = DbCommunicationConfig("jdbc:h2:mem://localhost", Some("org.h2.Driver"), "sa", "", query, None, Some(1000))
 
     actor ! InitDbConnection
-    receiveOne(5.seconds)
+    receiveOne(msgWaitTime)
     actor ! NextRound
-    expectMsgPF(2.seconds) { case DbCallFinished(DbCallSuccess(_, _, _, _)) =>}
+    expectMsgPF(msgWaitTime) { case DbCallFinished(DbCallSuccess(_, _, _, _)) =>}
   }
 
   it should "correctly replace the call ID placeholder" in new testFsmActorScope {
