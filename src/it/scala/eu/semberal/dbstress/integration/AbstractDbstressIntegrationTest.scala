@@ -9,11 +9,12 @@ import akka.testkit.{TestKit, TestKitBase}
 import eu.semberal.dbstress.Orchestrator
 import eu.semberal.dbstress.config.ConfigParser._
 import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-import scala.concurrent.duration.DurationLong
-
-trait AbstractDbstressIntegrationTest extends TestKitBase with BeforeAndAfterAll  {
+trait AbstractDbstressIntegrationTest extends TestKitBase with BeforeAndAfterAll with ScalaFutures {
   this: Suite =>
 
   override implicit lazy val system: ActorSystem = ActorSystem()
@@ -33,8 +34,6 @@ trait AbstractDbstressIntegrationTest extends TestKitBase with BeforeAndAfterAll
     val reader = new InputStreamReader(getClass.getClassLoader.getResourceAsStream(configFile))
     val config = parseConfigurationYaml(reader, Some("")).right.get
     val exports: List[ResultsExport] = new JsonResultsExport(tmpDir) :: new CsvResultsExport(tmpDir) :: Nil
-    new Orchestrator(exports).run(config, system)
-    system.awaitTermination(20.seconds)
-    tmpDir
+    whenReady(new Orchestrator(system).run(config, exports), Timeout(Span(10, Seconds)))(_ => tmpDir)
   }
 }

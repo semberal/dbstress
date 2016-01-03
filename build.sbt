@@ -1,6 +1,6 @@
 import sbt.Keys._
 
-val akkaVersion = "2.3.5"
+val akkaVersion = "2.4.1"
 val scalamockVersion = "3.2.2"
 
 val compileDependencies = Seq(

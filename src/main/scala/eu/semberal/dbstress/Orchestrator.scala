@@ -1,21 +1,29 @@
 package eu.semberal.dbstress
 
-import java.io.File
-
 import akka.actor.{ActorSystem, Props}
+import akka.pattern.ask
+import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.LazyLogging
+import eu.semberal.dbstress.actor.ManagerActor
 import eu.semberal.dbstress.actor.ManagerActor.RunScenario
-import eu.semberal.dbstress.actor.{ManagerActor, ResultsExporterActor, TerminatorActor}
 import eu.semberal.dbstress.model.Configuration.ScenarioConfig
-import eu.semberal.dbstress.util.{ResultsExport, CsvResultsExport, JsonResultsExport}
+import eu.semberal.dbstress.model.Results.ScenarioResult
+import eu.semberal.dbstress.service.ExportingService
+import eu.semberal.dbstress.util.ResultsExport
 
-class Orchestrator(exports: List[ResultsExport]) extends LazyLogging {
+import scala.concurrent.Future
 
-  def run(sc: ScenarioConfig, actorSystem: ActorSystem): Unit = {
-    val terminator = actorSystem.actorOf(Props[TerminatorActor], "terminator")
-    val resultsExporter = actorSystem.actorOf(ResultsExporterActor.defaultProps(exports), "resultsExporter")
-    val manager = actorSystem.actorOf(Props(classOf[ManagerActor], sc, resultsExporter, terminator), "manager")
-    logger.info("Starting the scenario")
-    manager ! RunScenario
+class Orchestrator(actorSystem: ActorSystem) extends LazyLogging {
+
+  def run(sc: ScenarioConfig, exports: List[ResultsExport]): Future[Unit] = {
+
+    val manager = actorSystem.actorOf(Props(classOf[ManagerActor], sc), "manager")
+
+    implicit val timeout: Timeout = Defaults.ScenarioTimeout
+
+    implicit val executionContext = actorSystem.dispatcher // todo review dispatchers
+
+    val scenarioResultFuture = (manager ? RunScenario).mapTo[ScenarioResult]
+    scenarioResultFuture.flatMap(sr => new ExportingService(exports).export(sr))
   }
 }
