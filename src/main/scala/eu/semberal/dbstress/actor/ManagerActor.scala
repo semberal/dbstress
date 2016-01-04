@@ -12,9 +12,7 @@ class ManagerActor(scenario: ScenarioConfig) extends Actor with LazyLogging {
 
   private var originalSender: Option[ActorRef] = None
 
-  override def receive: Receive = unintialized
-
-  def unintialized: Receive = {
+  override def receive = {
     case RunScenario =>
       originalSender = Some(sender())
       logger.info("Starting units initialization")

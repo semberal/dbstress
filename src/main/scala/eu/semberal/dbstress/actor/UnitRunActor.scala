@@ -6,57 +6,50 @@ import eu.semberal.dbstress.actor.UnitActor.{UnitRunFinished, UnitRunInitialized
 import eu.semberal.dbstress.actor.UnitRunActor._
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
-import eu.semberal.dbstress.util.IdGen
 import eu.semberal.dbstress.util.IdGen.genStatementId
 
-class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor with LoggingFSM[State, Option[UnitRunResult]] {
+class UnitRunActor(unitRunConfig: UnitRunConfig) extends Actor {
 
   private val DbCommunicationActorName = "dbCommunicationActor"
 
-  startWith(Uninitialized, None)
-
-  when(Uninitialized) {
-    case Event(InitUnitRun(scenarioId), _) =>
+  override def receive = {
+    case InitUnitRun(scenarioId) =>
       context.actorOf(Props(classOf[DbCommunicationActor], unitRunConfig.dbConfig, scenarioId, genStatementId()), DbCommunicationActorName) ! InitDbConnection
-      goto(ConfirmationWait)
+      context.become(confirmationWait)
   }
 
-  when(ConfirmationWait) {
-    case Event(DbConnInitFinished(r), _) => r match {
-      case x: DbConnInitSuccess =>
+  private def confirmationWait: Receive = {
+    case DbConnInitFinished(r) => r match {
+      case x: DbConnInitResult =>
         context.parent ! UnitRunInitialized
-        goto(StartUnitRunWait) using Some(UnitRunResult(x, Nil))
-      case x: DbConnInitFailure =>
-        context.parent ! UnitRunInitialized
-        goto(StartUnitRunWait) using Some(UnitRunResult(x, Nil))
+        context.become(startUnitRunWait(x))
     }
   }
 
-  when(StartUnitRunWait) {
-    case Event(StartUnitRun, Some(r@UnitRunResult(initResult, _))) => initResult match {
-      case x: DbConnInitSuccess =>
-        context.child(DbCommunicationActorName).foreach(_ ! NextRound)
-        goto(ResultWait)
-      case x: DbConnInitFailure =>
-        context.parent ! UnitRunFinished(r)
-        stop()
-    }
-  }
-
-  when(ResultWait) {
-    case Event(DbCallFinished(dbResult), Some(unitRunResult)) =>
-      val newUnitRunResult = unitRunResult.copy(callResults = dbResult :: unitRunResult.callResults)
-
-      if (newUnitRunResult.callResults.size < unitRunConfig.repeats) {
-        context.child(DbCommunicationActorName).foreach(_ ! NextRound)
-        stay() using Some(newUnitRunResult)
-      } else {
-        context.parent ! UnitRunFinished(newUnitRunResult)
-        stop()
+  private def startUnitRunWait(connInitResult: DbConnInitResult): Receive = {
+    case StartUnitRun =>
+      val unitRunResult = UnitRunResult(connInitResult, Nil)
+      connInitResult match {
+        case x: DbConnInitSuccess =>
+          context.child(DbCommunicationActorName).foreach(_ ! NextRound)
+          context.become(dbCallResultWait(unitRunResult))
+        case x: DbConnInitFailure =>
+          context.parent ! UnitRunFinished(unitRunResult)
+          self ! PoisonPill
       }
   }
 
-  initialize()
+  private def dbCallResultWait(resultSoFar: UnitRunResult): Receive = {
+    case DbCallFinished(dbCallResult) =>
+      val newResultSoFar = resultSoFar.copy(callResults = dbCallResult :: resultSoFar.callResults)
+      if(newResultSoFar.callResults.size == unitRunConfig.repeats) {
+        context.parent ! UnitRunFinished(newResultSoFar)
+        self ! PoisonPill
+      } else {
+        context.child(DbCommunicationActorName).foreach(_ ! NextRound)
+        context.become(dbCallResultWait(newResultSoFar))
+      }
+  }
 }
 
 object UnitRunActor {
@@ -68,17 +61,5 @@ object UnitRunActor {
   case object StartUnitRun
 
   case class DbCallFinished(dbResult: DbCallResult)
-
-  case object DbConnectionTerminated
-
-  protected sealed trait State
-
-  protected case object Uninitialized extends State
-
-  protected case object ConfirmationWait extends State
-
-  protected case object StartUnitRunWait extends State
-
-  protected case object ResultWait extends State
 
 }

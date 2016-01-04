@@ -4,7 +4,7 @@ import java.lang.Class.forName
 import java.sql.{Connection, DriverManager}
 import java.util.concurrent._
 
-import akka.actor.{Actor, LoggingFSM}
+import akka.actor.{Actor, PoisonPill}
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.actor.DbCommunicationActor._
 import eu.semberal.dbstress.actor.UnitRunActor.{DbCallFinished, DbConnInitFinished}
@@ -15,21 +15,18 @@ import eu.semberal.dbstress.util.ModelExtensions.ArmManagedResource
 import org.joda.time.DateTime.now
 import resource._
 
-import scala.concurrent.duration.DurationDouble
+import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.util.{Failure, Success}
 
-class DbCommunicationActor(dbConfig: DbCommunicationConfig, scenarioId: String, connectionId: String)
-  extends Actor
-  with LazyLogging
-  with LoggingFSM[State, Option[Connection]] {
+class DbCommunicationActor(dbConfig: DbCommunicationConfig, scenarioId: String, connectionId: String) extends Actor with LazyLogging {
 
   private implicit val dbDispatcher = context.system.dispatchers.lookup("akka.dispatchers.db-dispatcher")
 
-  startWith(Uninitialized, None)
+  private[actor] var connection: Option[Connection] = None
 
-  when(Uninitialized) {
-    case Event(InitDbConnection, _) =>
+  override def receive = {
+    case InitDbConnection =>
       val start = now()
 
       /*
@@ -45,18 +42,22 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig, scenarioId: String, 
 
       try {
         /* not ideal, but connection reference is needed to make the state transition */
-        val (s, e, connection) = Await.result(f, dbConfig.connectionTimeout.getOrElse(Int.MaxValue).milliseconds)
+        val (s, e, connection) = Await.result(f, Duration(dbConfig.connectionTimeout.getOrElse(Int.MaxValue), TimeUnit.MILLISECONDS))
         logger.debug("Database connection has been successfully created")
-        goto(WaitForJob) using Some(connection) replying DbConnInitFinished(DbConnInitSuccess(s, e))
+        sender() ! DbConnInitFinished(DbConnInitSuccess(s, e))
+        this.connection = Some(connection)
+        context.become(waitForJob)
       } catch {
         case e: Throwable =>
           logger.debug("An error during connection initialization has occurred", e)
-          stay() replying DbConnInitFinished(DbConnInitFailure(start, now(), e))
+          sender() ! DbConnInitFinished(DbConnInitFailure(start, now(), e))
+          self ! PoisonPill
       }
   }
 
-  when(WaitForJob) {
-    case Event(NextRound, connection) =>
+  private[actor] def waitForJob: Receive = {
+
+    case NextRound =>
       val start = now()
 
       val dbCallId = DbCallId(scenarioId, connectionId, genStatementId())
@@ -65,26 +66,23 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig, scenarioId: String, 
       val futuresList = {
         val dbFuture = Future {
           val futStart = now()
-          val statementResult = connection.map { conn =>
-            managed(conn.createStatement()).map({ statement =>
+          val conn = connection.getOrElse(throw new IllegalStateException("Database connection has not been created"))
 
-              if (statement.execute(query)) {
-                val resultSet = statement.getResultSet
-                val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
-                FetchedRows(fetchedRows)
-              } else {
-                UpdateCount(statement.getUpdateCount)
-              }
-            }).toTry match {
-              case Success(x) => x
-              case Failure(e) => throw e
+          val statementResult = managed(conn.createStatement()).map({ statement =>
+            if (statement.execute(query)) {
+              val resultSet = statement.getResultSet
+              val fetchedRows = Iterator.continually(resultSet.next()).takeWhile(identity).length
+              FetchedRows(fetchedRows)
+            } else {
+              UpdateCount(statement.getUpdateCount)
             }
-          }.getOrElse(throw new IllegalStateException("Connection has not been initialized, yet. "))
+          }).toTry.get
+
           (futStart, now(), statementResult)
         }
 
         val timeoutFuture = dbConfig.queryTimeout.map { x =>
-          akka.pattern.after(x.milliseconds, using = context.system.scheduler) {
+          akka.pattern.after(Duration(x, TimeUnit.MILLISECONDS), using = context.system.scheduler) {
             throw new TimeoutException("Database call has timed out")
           }
         }
@@ -100,22 +98,17 @@ class DbCommunicationActor(dbConfig: DbCommunicationConfig, scenarioId: String, 
         case Failure(e) =>
           currentSender ! DbCallFinished(DbCallFailure(start, now(), dbCallId, e))
       }
-      stay()
   }
 
-  onTermination {
-    case StopEvent(_, _, connection) =>
-      logger.debug("Closing database connection")
-      try {
-        connection.foreach(_.close())
-        logger.debug("Database connection has been successfully closed")
-      } catch {
-        case e: Throwable =>
-          logger.warn("Unable to close a database connection", e)
-      }
+  override def postStop(): Unit = {
+    logger.debug("Closing database connection")
+    try {
+      connection.foreach(_.close())
+      logger.debug("Database connection has been successfully closed")
+    } catch {
+      case e: Throwable => logger.warn("Unable to close a database connection", e)
+    }
   }
-
-  initialize()
 }
 
 object DbCommunicationActor {

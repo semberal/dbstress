@@ -7,49 +7,39 @@ import eu.semberal.dbstress.actor.UnitRunActor.{InitUnitRun, StartUnitRun}
 import eu.semberal.dbstress.model.Configuration._
 import eu.semberal.dbstress.model.Results._
 
-class UnitActor(unitConfig: UnitConfig) extends Actor with LoggingFSM[State, Data] {
+class UnitActor(unitConfig: UnitConfig) extends Actor {
 
-  startWith(Uninitialized, No)
-
-  when(Uninitialized) {
-    case Event(InitUnit(scenarioId), _) =>
-      (1 to unitConfig.parallelConnections).map(i => {
+  override def receive = {
+    case InitUnit(scenarioId) =>
+      (1 to unitConfig.parallelConnections).foreach(i => {
         val actor = context.actorOf(Props(classOf[UnitRunActor], unitConfig.config), s"run$i")
         actor ! InitUnitRun(scenarioId)
       })
-      goto(InitConfirmationsWait) using RemainingInitUnitRunConfirmations(unitConfig.parallelConnections)
+      context.become(confirmationWait(unitConfig.parallelConnections))
   }
 
-  when(InitConfirmationsWait) {
-    case Event(UnitRunInitialized, RemainingInitUnitRunConfirmations(n)) =>
-      if (n == 1) {
+  private def confirmationWait(remaining: Int): Receive = {
+    case UnitRunInitialized =>
+      if (remaining == 1) {
         context.parent ! UnitInitialized(unitConfig.name)
-        goto(StartUnitWait) using No
-      } else {
-        goto(InitConfirmationsWait) using RemainingInitUnitRunConfirmations(n - 1)
-      }
+        context.become(startUnitWait)
+      } else context.become(confirmationWait(remaining - 1))
   }
 
-  when(StartUnitWait) {
-    case Event(StartUnit, _) =>
+  private def startUnitWait: Receive = {
+    case StartUnit =>
       context.children.foreach(_ ! StartUnitRun)
-      goto(UnitRunResultsWait) using CollectedUnitRunResults(Nil)
+      context.become(unitRunResultsWait(Nil))
   }
 
-  when(UnitRunResultsWait) {
-    case Event(UnitRunFinished(result), CollectedUnitRunResults(l)) =>
-      val newUnitRunResults = result :: l
-      if (newUnitRunResults.length == unitConfig.parallelConnections) {
-        context.parent ! UnitFinished(UnitResult(unitConfig, newUnitRunResults))
-        goto(TerminationWait) using No
-      } else {
-        goto(UnitRunResultsWait) using CollectedUnitRunResults(newUnitRunResults)
-      }
+  private def unitRunResultsWait(alreadyCollected: List[UnitRunResult]): Receive = {
+    case UnitRunFinished(result) =>
+      val newAlreadyCollected = result :: alreadyCollected
+      if(newAlreadyCollected.length == unitConfig.parallelConnections) {
+        context.parent ! UnitFinished(UnitResult(unitConfig, newAlreadyCollected.reverse))
+        self ! PoisonPill
+      } else context.become(unitRunResultsWait(newAlreadyCollected))
   }
-
-  when(TerminationWait)(Map.empty) // just to make work transition to the TerminationWait state
-
-  initialize()
 }
 
 object UnitActor {
@@ -61,25 +51,5 @@ object UnitActor {
   case object StartUnit
 
   case class UnitRunFinished(unitRunResult: UnitRunResult)
-
-  protected sealed trait State
-
-  protected case object Uninitialized extends State
-
-  protected case object InitConfirmationsWait extends State
-
-  protected case object StartUnitWait extends State
-
-  protected case object UnitRunResultsWait extends State
-
-  protected case object TerminationWait extends State
-
-  protected sealed trait Data
-
-  protected case object No extends Data
-
-  protected case class RemainingInitUnitRunConfirmations(n: Int) extends Data
-
-  protected case class CollectedUnitRunResults(l: List[UnitRunResult]) extends Data
 
 }
