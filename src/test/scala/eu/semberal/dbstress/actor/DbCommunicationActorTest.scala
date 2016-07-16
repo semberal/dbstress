@@ -3,23 +3,22 @@ package eu.semberal.dbstress.actor
 import java.sql.{Connection, Statement}
 import java.util.regex.Pattern
 
-import akka.actor.{ActorSystem, PoisonPill, Props}
-import akka.testkit.{TestActorRef, TestKit, TestKitBase}
+import akka.actor.{ActorSystem, PoisonPill}
+import akka.testkit.{TestActorRef, TestKit}
 import eu.semberal.dbstress.actor.DbCommunicationActor.NextRound
 import eu.semberal.dbstress.model.Configuration.DbCommunicationConfig
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{BeforeAndAfterAll, FlatSpecLike, Matchers}
 
-class DbCommunicationActorTest extends TestKitBase with FlatSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
+class DbCommunicationActorTest extends FlatSpecLike with Matchers with MockFactory with BeforeAndAfterAll {
 
-
-  override implicit lazy val system: ActorSystem = ActorSystem()
+  private implicit lazy val system: ActorSystem = ActorSystem()
 
   override protected def afterAll(): Unit = TestKit.shutdownActorSystem(system)
 
   private trait actorScope {
     protected def dbCommunicationConfig: DbCommunicationConfig
-    protected lazy val actor: TestActorRef[DbCommunicationActor] = TestActorRef(Props(classOf[DbCommunicationActor], dbCommunicationConfig, "X", "Y"))
+    protected lazy val actor: TestActorRef[DbCommunicationActor] = TestActorRef(new DbCommunicationActor(dbCommunicationConfig, "X", "Y"))
   }
 
   "DbCommunicationActor" should "correctly close its initialized connection" in new actorScope {
@@ -59,8 +58,5 @@ class DbCommunicationActorTest extends TestKitBase with FlatSpecLike with Matche
     }).once()
 
     (connection.close _).verify().once()
-
   }
-
-
 }

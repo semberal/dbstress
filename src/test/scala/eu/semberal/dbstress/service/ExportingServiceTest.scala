@@ -19,7 +19,7 @@ class ExportingServiceTest extends FlatSpecLike with Matchers with ScalaFutures 
     service.export(ScenarioResult(Nil))
 
     whenReady(service.export(ScenarioResult(Nil)).failed) {
-      _.getMessage should fullyMatch regex "^/root/complete\\.[0-9]{8}_[0-9]{6}\\.json \\(Permission denied\\)$".r
+      _.getMessage should fullyMatch regex "^/root/complete\\.[0-9]{8}_[0-9]{6}\\.json \\(.*\\)$".r
     }
   }
 }
