@@ -5,14 +5,12 @@ import java.lang.Math.{max, min}
 import java.util.concurrent.TimeoutException
 
 import akka.actor.ActorSystem
-import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
 import scopt.OptionParser
 
-import scala.concurrent.ExecutionContext.Implicits
 import scala.concurrent.{Await, Future}
 
 object Main extends LazyLogging {
