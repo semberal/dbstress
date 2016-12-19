@@ -8,7 +8,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
-import eu.semberal.dbstress.util.{CsvResultsExport, JsonResultsExport, ResultsExport}
+import eu.semberal.dbstress.util.{CsvResultsExport, ResultsExport}
 import scopt.OptionParser
 
 import scala.concurrent.{Await, Future}
@@ -82,7 +82,7 @@ object Main extends LazyLogging {
           }
           """)
           val system = ActorSystem("dbstressMaster", dbDispatcherConfig.withFallback(ConfigFactory.load()))
-          val exports: List[ResultsExport] = new JsonResultsExport(outputDir) :: new CsvResultsExport(outputDir) :: Nil
+          val exports: List[ResultsExport] = new CsvResultsExport(outputDir) :: Nil
           val future: Future[Unit] = new Orchestrator(system).run(sc, exports)
 
           try {

@@ -114,7 +114,7 @@ In order to identify individual database calls in the server logs, you might wan
 
 *Please note these components don't reflect the logical scenario organization (i.e. units). It is, therefore, not possible to grep for all queries from a single unit (unless the unit only contains one connection).*
 
-So, when the database call result (only present in the detailed JSON output) contains the following line: `"callId" : "UUii_DmYt_Vydm"`, the scenario, connection and query identifiers are `UUii`, `DmYt` and `Vydm`, respectively. You can grep server logs to identify each individual query, all queries from a single scenario run or all queries within a single database connection.
+With this information, you can grep server logs to identify each individual query, all queries from a single scenario or all queries within a single database connection.
 
 Here is an example unit configuration:
 
@@ -149,11 +149,9 @@ When the application completes successfully, it exits with status `0` (successfu
 
 ## Results
 
-When a scenario run finishes, it creates two files in the output directory: `summary.${timestamp}.csv` and `complete.${timestamp}.json`.
+When a scenario run finishes, it creates file `summary.${timestamp}.csv` in the output directory.
 
-The CSV summary file doesn't contain details about individual database calls, but rather statistical values (min, max, mean, median and standard deviation) calculated from all/successful/failed samples. The JSON report contains summarized statistical values, as well, but unlike the CSV report it also contains exhaustive information about individual database calls (start/end time, number of rows fetched, updated rows count, etc).
-
-After some consideration I decided to choose CSV and JSON formats to represent the _dbstress_ results, because they cover two slightly different uses cases. CSV summarized reports are very convenient when you would like to just copy&paste them into an Excel spreadsheet and create some quick performance graphs. JSON report, on the other hand, is less readable, but can be easily imported into _MongoDB_ or similar database and some more advanced reporting can be built on top of it.
+The CSV summary file contains statistical values (min, max, mean, median and standard deviation) calculated from all/successful/failed samples.
 
 ## Issues
 If you have any problem with the application, find a bug or encounter an unexpected behaviour, please [create an issue](https://github.com/semberal/dbstress/issues/new) in the _dbstress_ [issue tracker](https://github.com/semberal/dbstress/issues) on GitHub.
