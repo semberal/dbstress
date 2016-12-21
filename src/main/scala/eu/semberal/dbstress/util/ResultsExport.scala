@@ -6,9 +6,7 @@ import breeze.io.CSVWriter
 import eu.semberal.dbstress.Defaults._
 import eu.semberal.dbstress.model.Results.ScenarioResult
 import org.joda.time.DateTime._
-import play.api.libs.json.Json
 import resource._
-import eu.semberal.dbstress.model.JsonSupport.scenarioResultWrites
 import eu.semberal.dbstress.util.ModelExtensions._
 
 trait ResultsExport {
@@ -19,13 +17,6 @@ trait ResultsExport {
   protected def withWriter(filePath: String)(op: Writer => Unit): Unit =
     for (b <- managed(new BufferedWriter(new FileWriter(filePath)))) op(b)
 
-}
-
-class JsonResultsExport(outputDir: File) extends ResultsExport {
-  override def export(sr: ScenarioResult): Unit =
-    withWriter(s"${outputDir}${File.separator}complete.$curr.json") {
-      _.write(Json.prettyPrint(Json.toJson(sr)))
-    }
 }
 
 class CsvResultsExport(outputDir: File) extends ResultsExport {

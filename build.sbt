@@ -8,10 +8,10 @@ val compileDependencies = Seq(
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2", // 3.x.x version acting weird
   "joda-time" % "joda-time" % "2.9.4",
+  "org.joda" % "joda-convert" % "1.8.1",
   "org.yaml" % "snakeyaml" % "1.17",
   "com.jsuereth" %% "scala-arm" % "1.4",
   "org.scalanlp" %% "breeze" % "0.12" exclude("com.github.rwl", "jtransforms"),
-  "com.typesafe.play" %% "play-json" % "2.5.4",
   "com.github.scopt" %% "scopt" % "3.5.0",
   "org.apache.commons" % "commons-lang3" % "3.4"
 )

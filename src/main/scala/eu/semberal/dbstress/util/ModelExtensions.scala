@@ -1,7 +1,6 @@
 package eu.semberal.dbstress.util
 
 import breeze.linalg.DenseVector
-import play.api.libs.json.{JsNull, JsNumber, JsValue}
 import resource.ExtractableManagedResource
 
 import scala.util.{Failure, Success, Try}
@@ -31,10 +30,6 @@ object ModelExtensions {
 
   implicit class StringifiedOption[T](o: Option[T]) {
     def getOrMissingString: String = o.map(_.toString).getOrElse("-")
-  }
-
-  implicit class NullableJsonValue[T <% BigDecimal](value: Option[T]) {
-    def getJsNumber: JsValue = value.map(JsNumber(_)).getOrElse(JsNull)
   }
 
   implicit class ArmManagedResource[T](o: ExtractableManagedResource[T]) {
