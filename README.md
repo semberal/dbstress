@@ -37,6 +37,8 @@ git clone git@github.com:semberal/dbstress.git
 sbt "run -c /path/to/scenario_config.yaml -o /path/to/output_directory"
 ```
 
+_dbstress_ requires Java 8.
+
 ## Terminology and the test scenario description
 
 Top level configuration element is a _scenario_, which consists of at least one _unit_. 
@@ -81,7 +83,6 @@ password: ""
 parallel_connections: 2
 repeats: 5
 connection_timeout: 500
-query_timeout: 500
 
 ---
 unit_name: unit2
@@ -94,15 +95,15 @@ password: ""
 parallel_connections: 10
 repeats: 5
 connection_timeout: 50
-query_timeout: 50
 ```
 
 ### Threading
-In order to fine tune the performance tests, it is useful to know how the mapping of database worker jobs to threads works. In _dbstress_, there are two important thread pools configured. The first one is used mostly for scenario orchestration and results aggregation and can spawn up to 64 threads (it will usually be much less). The other thread pool is used for execution of the blocking database calls themselves. By default, the number of threads in this thread pool ranges (i.e. new threads are spawned when necessary) from the total parallel connections count configured for all units to the total number of parallel connections multiplied by 1.5. The maximum number of threads in this thread pool can be configured by the `--max-db-threads` command line parameter (must be >= than the total number of parallel connections, though).
+In _dbstress_, there are two important thread pools. The first one is used by the Akka actor system infrastructure
+(for scenario orchestration, results aggregation, etc) and can spawn up to 64 threads (it will be usually much less).
 
-Why are the minimum and maximum values chosen this way? The minimum value is obvious, there has to be at least as many threads as parallel database calls. If there were no query timeouts, the maximum thread pool size could be equal to the minimum size. However, if you define the `query_timeout` unit parameter, even though queries running longer than the configured limit will be reported as timeout in the scenario results, their execution will not be terminated. It is not possible for all queries and query phases (`pg_sleep()` or when the database has not yet returned a cursor) to do so, but it is not yet implemented even for cases when it is possible to terminate the db call (already iterating over the database cursor).
-
-This is the reason why it is recommended to use query timeouts with great caution, timeouted queries will be correctly reported in the scenario results, the database operations, however, will not be interrupted and thus create additional database load which, consequently, can lead to biased results.
+The other thread pool is used for execution of the blocking database calls.
+The number of threads in this thread pool is equal to the sum of database connections across all units.
+In other words, there is a dedicated thread for every database connection.
 
 ### Database calls labelling
 
@@ -137,15 +138,22 @@ To illustrate how can such labeling can be useful, let's consider debugging and 
 
 ### Error handling
 
-Various kinds of errors can occur during a scenario run, two most important categories of errors are _connection initialization errors_ and _query errors_.
+Various kinds of errors can occur during the scenario run, two most important categories of errors are _connection initialization errors_ and _query errors_.
 
-When a connection initialization fails (either due to an exception or a timeout), the unit run cannot proceed to the _query execution phase_ and send its portion of `REP` database queries. Therefore, the the total number of queries sent to the database in a unit will be `(PAR-N)*REP`, where `N` represents the number of failed _unit runs_. This is the reason why the unit summary might report the number of expected db calls to be larger than the number of db calls actually sent.
+When a connection initialization fails (either due to an exception or a timeout), _dbstress_ does not proceed to the _query execution phase_ and terminates immediately.
 
-Query errors, on the other hand, are nothing special, failed queries are simply reported as failures and unit run proceeds to the next iteration (obviously unless the query has already been executed `REP` times already).
+Query errors, on the other hand, are nothing special, failed queries are simply reported as failures and unit run proceeds to the next iteration.
 
-Information about both _connection initialization errors_ and _query errors_, along with the reasons (i.e. exception messages) are contained in the complete scenario results.
+Information about both _connection initialization errors_ and _query errors_, along with the reasons (i.e. exception messages) are contained in the application log.
 
-When the application completes successfully, it exits with status `0` (successful completion means the scenario has completed as expected, regardless of all database errors). Exit status `1` means incorrect command line arguments have been passed and exit status `2` represents invalid scenario configuration (YAML file). 
+The following list summarizes the various exit status codes:
+
+* 0: Success, output CSV generated. Individual queries still may have failed, though
+* 1: Error, incorrect command line arguments
+* 2: Error parsing the configuration YAML file
+* 3: Some database connections could not be initialised
+* 4: Scenario timeout
+* 10+: Unexpected application errors, should be reported as bugs
 
 ## Results
 

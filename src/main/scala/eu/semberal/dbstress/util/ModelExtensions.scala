@@ -1,9 +1,6 @@
 package eu.semberal.dbstress.util
 
 import breeze.linalg.DenseVector
-import resource.ExtractableManagedResource
-
-import scala.util.{Failure, Success, Try}
 
 object ModelExtensions {
 
@@ -31,13 +28,4 @@ object ModelExtensions {
   implicit class StringifiedOption[T](o: Option[T]) {
     def getOrMissingString: String = o.map(_.toString).getOrElse("-")
   }
-
-  implicit class ArmManagedResource[T](o: ExtractableManagedResource[T]) {
-    def toTry: Try[T] = o.either match {
-      case Left(x :: xs) => Failure(x)
-      case Left(_) => Failure(new IllegalStateException("Resource operation failed, but no exceptions are reported"))
-      case Right(value) => Success(value)
-    }
-  }
-
 }

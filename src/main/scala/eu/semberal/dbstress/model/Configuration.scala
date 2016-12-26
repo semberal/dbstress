@@ -14,11 +14,11 @@ object Configuration {
 
   case class DbCommunicationConfig(uri: String, driverClass: Option[String],
                                    username: String, password: String, query: String,
-                                   connectionTimeout: Option[Int], queryTimeout: Option[Int])
+                                   connectionTimeout: Option[Int])
 
   object DbCommunicationConfigWithoutPassword {
-    def unapply(config: DbCommunicationConfig): Option[(String, Option[String], String, String, Option[Int], Option[Int])] =
-      Some((config.uri, config.driverClass, config.username, config.query, config.connectionTimeout, config.queryTimeout))
+    def unapply(config: DbCommunicationConfig): Option[(String, Option[String], String, String, Option[Int])] =
+      Some((config.uri, config.driverClass, config.username, config.query, config.connectionTimeout))
   }
 
 }

@@ -4,7 +4,6 @@ import java.io.{BufferedReader, File, FileReader, Reader}
 import java.util.{Map => JMap}
 
 import eu.semberal.dbstress.model.Configuration._
-import eu.semberal.dbstress.util.ModelExtensions._
 import org.yaml.snakeyaml.Yaml
 import resource._
 
@@ -30,7 +29,7 @@ object ConfigParser {
 
     managed(reader).map { reader =>
       yaml.loadAll(reader).map(x => Map(x.asInstanceOf[JMap[String, Object]].toList: _*))
-    }.toTry match {
+    }.tried match {
       case Failure(e) => Left(e.getMessage)
       case Success(foo) =>
         val units = foo.toList.map { map =>
@@ -41,7 +40,6 @@ object ConfigParser {
             password <- loadFromMap[String, String](map, "password", defaultPassword)().right
             query <- loadFromMap[String, String](map, "query")(isStringNonEmpty).right
             connectionTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "connection_timeout")(_ > 0).right
-            queryTimeout <- loadFromMapOptional[Int, java.lang.Integer](map, "query_timeout")(_ > 0).right
 
             repeats <- loadFromMap[Int, java.lang.Integer](map, "repeats")(_ > 0).right
 
@@ -49,8 +47,7 @@ object ConfigParser {
             description <- loadFromMapOptional[String, String](map, "description")().right
             parallelConnections <- loadFromMap[Int, java.lang.Integer](map, "parallel_connections")(_ > 0).right
           } yield {
-            val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query,
-              connectionTimeout, queryTimeout)
+            val dbConfig = DbCommunicationConfig(uri, driverClass, username, password, query, connectionTimeout)
 
             val unitConfig = UnitRunConfig(dbConfig, repeats)
 

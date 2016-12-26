@@ -1,13 +1,13 @@
 package eu.semberal.dbstress
 
 import java.io.File
-import java.lang.Math.{max, min}
 import java.util.concurrent.TimeoutException
 
 import akka.actor.ActorSystem
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import com.typesafe.scalalogging.slf4j.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
+import eu.semberal.dbstress.model.Results.{ConnectionInitException, UnitRunException}
 import eu.semberal.dbstress.util.{CsvResultsExport, ResultsExport}
 import scopt.OptionParser
 
@@ -15,7 +15,7 @@ import scala.concurrent.{Await, Future}
 
 object Main extends LazyLogging {
 
-  case class CmdLineArguments(configFile: File = null, outputDir: File = null, maxDbWorkerThreads: Option[Int] = None, dbPassword: Option[String] = None)
+  case class CmdLineArguments(configFile: File = null, outputDir: File = null, dbPassword: Option[String] = None)
 
   def main(args: Array[String]): Unit = {
     val parser = new OptionParser[CmdLineArguments]("dbstress") {
@@ -41,13 +41,6 @@ object Main extends LazyLogging {
         case _ => success
       }
 
-      opt[Int]("max-db-threads").valueName("N").text("Max db worker threads").action { (x, c) =>
-        c.copy(maxDbWorkerThreads = Some(x))
-      }.validate {
-        case x if x <= 0 => failure("Max database worker threads count must be a positive integer")
-        case _ => success
-      }
-
       opt[String]('p', "password").valueName("DB_PASSWORD").text("Password to be used for database connections across all units").action { (x, c) =>
         c.copy(dbPassword = Some(x))
       }
@@ -59,48 +52,48 @@ object Main extends LazyLogging {
     }
 
     parser.parse(args, CmdLineArguments()) match {
-      case Some(CmdLineArguments(configFile, outputDir, maxDbWorkersThreads, dbPassword)) => parseConfigurationYaml(configFile, dbPassword) match {
+      case Some(CmdLineArguments(configFile, outputDir, dbPassword)) => parseConfigurationYaml(configFile, dbPassword) match {
         case Right(sc) =>
           val minConn: Int = sc.units.map(_.parallelConnections).sum
-          val maxConn: Int = {
-            val defaultMax = minConn * 3 / 2
-            maxDbWorkersThreads.map(x => min(max(minConn, x), defaultMax)).getOrElse(defaultMax)
-          }
+          logger.debug(s"Database worker threads count: $minConn")
+          val key = "akka.dispatchers.db-dispatcher.thread-pool-executor.core-pool-size-min"
+          val dispatcherConfig = ConfigFactory.load().withValue(key, ConfigValueFactory.fromAnyRef(minConn))
 
-          logger.info(s"Database worker threads count: default=$minConn max=$maxConn")
-          val dbDispatcherConfig = ConfigFactory.parseString(
-            s"""
-          akka {
-            dispatchers {
-              db-dispatcher {
-                thread-pool-executor {
-                  core-pool-size-min = $minConn
-                  core-pool-size-max = $maxConn
-                }
-              }
-            }
-          }
-          """)
-          val system = ActorSystem("dbstressMaster", dbDispatcherConfig.withFallback(ConfigFactory.load()))
+          val system = ActorSystem("dbstressMaster", dispatcherConfig)
           val exports: List[ResultsExport] = new CsvResultsExport(outputDir) :: Nil
           val future: Future[Unit] = new Orchestrator(system).run(sc, exports)
 
-          try {
+          val exitStatus: Int = try {
             Await.result(future, Defaults.ScenarioTimeout)
             logger.info("Scenario has successfully completed")
+            0
           } catch {
-            case e: TimeoutException => logger.warn("Scenario has time out") // todo msg
-            case e: Exception => logger.warn("Exception during scenario execution", e)
+            case e: ConnectionInitException =>
+              logger.error("Some database connection could not be initialized", e)
+              3
+            case e: TimeoutException =>
+              logger.warn("Scenario has timed out")
+              4
+            case e: UnitRunException =>
+              logger.error("Error during unit run execution. This generally means an application bug. " +
+                "Please, file an issue in the dbstress bugtracker.", e)
+              10
+            case e: Exception =>
+              logger.warn("Exception during scenario execution occurred", e)
+              11
           }
 
           logger.info("Shutting down the actor system")
           try {
             Await.result(system.terminate(), Defaults.ActorSystemShutdownTimeout)
-            logger.info(s"Actor system has been shut down")
+            logger.debug(s"Actor system has been shut down")
           } catch {
             case e: TimeoutException => logger.warn("Unable to shutdown the actor system within the specified time limit")
             case e: Exception => logger.warn("Exception during actor system shutdown has occurred", e)
           }
+
+          if (exitStatus != 0) System.exit(exitStatus)
+
         case Left(msg) =>
           System.err.println(s"Configuration error: $msg")
           System.exit(2) // exit status 2 when configuration parsing error has occurred

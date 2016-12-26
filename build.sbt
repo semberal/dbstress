@@ -10,7 +10,7 @@ val compileDependencies = Seq(
   "joda-time" % "joda-time" % "2.9.4",
   "org.joda" % "joda-convert" % "1.8.1",
   "org.yaml" % "snakeyaml" % "1.17",
-  "com.jsuereth" %% "scala-arm" % "1.4",
+  "com.jsuereth" %% "scala-arm" % "2.0",
   "org.scalanlp" %% "breeze" % "0.12" exclude("com.github.rwl", "jtransforms"),
   "com.github.scopt" %% "scopt" % "3.5.0",
   "org.apache.commons" % "commons-lang3" % "3.4"
@@ -34,7 +34,7 @@ lazy val root = (project in file(".")).settings(
   name := "dbstress",
   version := "1.0.0-beta3-SNAPSHOT",
   scalaVersion := "2.11.8",
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Ywarn-unused-import", "-Xmax-classfile-name", "140")
 ).settings(resolvers ++= Seq(
   "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 )).configs(IntegrationTest).settings(Defaults.itSettings: _*)

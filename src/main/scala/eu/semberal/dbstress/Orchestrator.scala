@@ -1,11 +1,11 @@
 package eu.semberal.dbstress
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import com.typesafe.scalalogging.slf4j.LazyLogging
-import eu.semberal.dbstress.actor.ManagerActor
-import eu.semberal.dbstress.actor.ManagerActor.RunScenario
+import eu.semberal.dbstress.actor.ControllerActor
+import eu.semberal.dbstress.actor.ControllerActor.RunScenario
 import eu.semberal.dbstress.model.Configuration.ScenarioConfig
 import eu.semberal.dbstress.model.Results.ScenarioResult
 import eu.semberal.dbstress.service.ExportingService
@@ -17,13 +17,14 @@ class Orchestrator(actorSystem: ActorSystem) extends LazyLogging {
 
   def run(sc: ScenarioConfig, exports: List[ResultsExport]): Future[Unit] = {
 
-    val manager = actorSystem.actorOf(Props(classOf[ManagerActor], sc), "manager")
+    val controller = actorSystem.actorOf(ControllerActor.props(sc), "controller")
 
     implicit val timeout: Timeout = Defaults.ScenarioTimeout
 
-    implicit val executionContext = actorSystem.dispatcher // todo review dispatchers
+    implicit val executionContext = actorSystem.dispatcher
 
-    val scenarioResultFuture = (manager ? RunScenario).mapTo[ScenarioResult]
+    val scenarioResultFuture = (controller ? RunScenario).mapTo[ScenarioResult]
+
     scenarioResultFuture.flatMap(sr => new ExportingService(exports).export(sr))
   }
 }

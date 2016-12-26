@@ -24,8 +24,8 @@ object UnitSummaryTest {
   val repeats = 5
   val parallel = 2
   val unitResult = {
-    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(10), Some(10))
-    val unitRunResults = UnitRunResult(DbConnInitSuccess(now(), now()), List(
+    val dbCommunicationConfig = DbCommunicationConfig("A", Some("B"), "C", "D", "E", Some(10))
+    val unitRunResults = UnitRunResult(DbConnInitResult(now(), now()), List(
       DbCallSuccess(now(), now(), DbCallId("1", "2", "3"), FetchedRows(10)),
       DbCallFailure(now(), now(), DbCallId("4", "5", "6"), new RuntimeException)
     ))

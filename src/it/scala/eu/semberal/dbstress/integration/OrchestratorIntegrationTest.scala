@@ -16,9 +16,9 @@ class OrchestratorIntegrationTest extends FlatSpecLike with Matchers with Implic
     csvFiles should have size 1
     managed(Source.fromFile(csvFiles.head)) foreach { source =>
       val lines = source.getLines().toList
-      lines should have size 7
+      lines should have size 3
       lines.tail.foreach { line =>
-        line should startWith regex "\"unit[1-6]{1}\"".r
+        line should startWith regex "\"unit[1-2]{1}\"".r
       }
     }
   }

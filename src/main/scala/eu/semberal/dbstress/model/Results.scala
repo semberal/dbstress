@@ -10,14 +10,10 @@ object Results {
 
     val finish: DateTime
 
-    lazy val duration = new Duration(start, finish).getMillis
+    lazy val duration: Long = new Duration(start, finish).getMillis
   }
 
-  sealed trait DbConnInitResult extends OperationResult
-
-  case class DbConnInitSuccess(start: DateTime, finish: DateTime) extends DbConnInitResult
-
-  case class DbConnInitFailure(start: DateTime, finish: DateTime, e: Throwable) extends DbConnInitResult
+  case class DbConnInitResult(start: DateTime, finish: DateTime) extends OperationResult
 
   sealed trait DbCallResult extends OperationResult {
     val dbCallId: DbCallId
@@ -40,20 +36,16 @@ object Results {
   case class UnitRunResult(connInitResult: DbConnInitResult, callResults: List[DbCallResult])
 
   case class UnitResult(unitConfig: UnitConfig, unitRunResults: List[UnitRunResult]) {
-    lazy val summary = {
+    lazy val summary: UnitSummary = {
 
       val allDbCalls = unitRunResults.flatMap(_.callResults)
-      val successfulDbCalls = allDbCalls.collect({ case e: DbCallSuccess => e})
-      val failedDbCalls = allDbCalls.collect({ case e: DbCallFailure => e})
+      val successfulDbCalls = allDbCalls.collect({ case e: DbCallSuccess => e })
+      val failedDbCalls = allDbCalls.collect({ case e: DbCallFailure => e })
 
-      val allConnInits = unitRunResults.map(_.connInitResult)
-      val successfulConnInits = allConnInits.collect({ case e: DbConnInitSuccess => e})
-      val failedConnInits = allConnInits.collect({ case e: DbConnInitFailure => e})
+      val connInits = unitRunResults.map(_.connInitResult)
 
       UnitSummary(
-        StatsResults(allConnInits.map(_.duration)),
-        StatsResults(successfulConnInits.map(_.duration)),
-        StatsResults(failedConnInits.map(_.duration)),
+        StatsResults(connInits.map(_.duration)),
 
         unitConfig.parallelConnections * unitConfig.config.repeats,
 
@@ -68,14 +60,16 @@ object Results {
 
   case class UnitSummary
   (
-    performedConnectionInitsSummary: StatsResults,
-    successfulConnectionInitsSummary: StatsResults,
-    failedConnectionInitsSummary: StatsResults,
+    connectionInitsSummary: StatsResults,
 
     expectedDbCalls: Int,
 
     executedDbCallsSummary: StatsResults,
     successfulDbCallsSummary: StatsResults,
     failedDbCallsSummary: StatsResults)
+
+  class ConnectionInitException(e: Throwable) extends RuntimeException(e)
+
+  class UnitRunException(e: Throwable) extends RuntimeException(e)
 
 }
