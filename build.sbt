@@ -1,42 +1,31 @@
 import sbt.Keys._
 
-val akkaVersion = "2.4.8"
-val scalamockVersion = "3.2.2"
+val akkaVersion = "2.4.16"
 
-val compileDependencies = Seq(
+val dependencies = Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-  "com.typesafe.scala-logging" %% "scala-logging-slf4j" % "2.1.2", // 3.x.x version acting weird
-  "joda-time" % "joda-time" % "2.9.4",
-  "org.joda" % "joda-convert" % "1.8.1",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
   "org.yaml" % "snakeyaml" % "1.17",
-  "com.jsuereth" %% "scala-arm" % "1.4",
-  "org.scalanlp" %% "breeze" % "0.12" exclude("com.github.rwl", "jtransforms"),
+  "com.jsuereth" %% "scala-arm" % "2.0",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.4",
+  "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.scopt" %% "scopt" % "3.5.0",
-  "org.apache.commons" % "commons-lang3" % "3.4"
-)
-
-val runtimeDependencies = Seq(
-  "ch.qos.logback" % "logback-classic" % "1.1.7" % "runtime"
-)
-
-val testDependencies = Seq(
+  "org.apache.commons" % "commons-lang3" % "3.5",
+  "ch.qos.logback" % "logback-classic" % "1.1.8" % "runtime",
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test, it",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test, it",
-  "org.scalamock" %% "scalamock-core" % scalamockVersion % "test, it",
-  "org.scalamock" %% "scalamock-scalatest-support" % scalamockVersion % "test, it",
-//  "org.clapper" %% "grizzled-scala" % "1.2" % "test, it",
-  "com.h2database" % "h2" % "1.4.192" % "test, it"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test, it",
+  "com.h2database" % "h2" % "1.4.193" % "test, it"
 )
 
 lazy val root = (project in file(".")).settings(
   organization := "eu.semberal",
   name := "dbstress",
   version := "1.0.0-beta3-SNAPSHOT",
-  scalaVersion := "2.11.8",
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Xmax-classfile-name", "140")
+  scalaVersion := "2.12.1",
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Ywarn-unused-import")
 ).settings(resolvers ++= Seq(
   "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 )).configs(IntegrationTest).settings(Defaults.itSettings: _*)
-  .settings(packSettings: _*).settings(packMain := Map("dbstress" -> "eu.semberal.dbstress.Main"))
-  .settings(libraryDependencies ++= (compileDependencies ++ runtimeDependencies ++ testDependencies): _*)
+  .settings(libraryDependencies ++= dependencies: _*)
+  .enablePlugins(JavaAppPackaging)

@@ -1,23 +1,21 @@
 package eu.semberal.dbstress.model
 
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+
 import eu.semberal.dbstress.model.Configuration.UnitConfig
-import org.joda.time.{DateTime, Duration}
 
 object Results {
 
   trait OperationResult {
-    val start: DateTime
+    val start: LocalDateTime
 
-    val finish: DateTime
+    val finish: LocalDateTime
 
-    lazy val duration = new Duration(start, finish).getMillis
+    lazy val duration: Long = ChronoUnit.MILLIS.between(start, finish)
   }
 
-  sealed trait DbConnInitResult extends OperationResult
-
-  case class DbConnInitSuccess(start: DateTime, finish: DateTime) extends DbConnInitResult
-
-  case class DbConnInitFailure(start: DateTime, finish: DateTime, e: Throwable) extends DbConnInitResult
+  case class DbConnInitResult(start: LocalDateTime, finish: LocalDateTime) extends OperationResult
 
   sealed trait DbCallResult extends OperationResult {
     val dbCallId: DbCallId
@@ -27,9 +25,9 @@ object Results {
     override def toString = s"${scenarioId}_${connectionId}_$statementId"
   }
 
-  case class DbCallSuccess(start: DateTime, finish: DateTime, dbCallId: DbCallId, stmtResult: StatementResult) extends DbCallResult
+  case class DbCallSuccess(start: LocalDateTime, finish: LocalDateTime, dbCallId: DbCallId, stmtResult: StatementResult) extends DbCallResult
 
-  case class DbCallFailure(start: DateTime, finish: DateTime, dbCallId: DbCallId, e: Throwable) extends DbCallResult
+  case class DbCallFailure(start: LocalDateTime, finish: LocalDateTime, dbCallId: DbCallId, e: Throwable) extends DbCallResult
 
   sealed trait StatementResult
 
@@ -40,20 +38,16 @@ object Results {
   case class UnitRunResult(connInitResult: DbConnInitResult, callResults: List[DbCallResult])
 
   case class UnitResult(unitConfig: UnitConfig, unitRunResults: List[UnitRunResult]) {
-    lazy val summary = {
+    lazy val summary: UnitSummary = {
 
       val allDbCalls = unitRunResults.flatMap(_.callResults)
-      val successfulDbCalls = allDbCalls.collect({ case e: DbCallSuccess => e})
-      val failedDbCalls = allDbCalls.collect({ case e: DbCallFailure => e})
+      val successfulDbCalls = allDbCalls.collect({ case e: DbCallSuccess => e })
+      val failedDbCalls = allDbCalls.collect({ case e: DbCallFailure => e })
 
-      val allConnInits = unitRunResults.map(_.connInitResult)
-      val successfulConnInits = allConnInits.collect({ case e: DbConnInitSuccess => e})
-      val failedConnInits = allConnInits.collect({ case e: DbConnInitFailure => e})
+      val connInits = unitRunResults.map(_.connInitResult)
 
       UnitSummary(
-        StatsResults(allConnInits.map(_.duration)),
-        StatsResults(successfulConnInits.map(_.duration)),
-        StatsResults(failedConnInits.map(_.duration)),
+        StatsResults(connInits.map(_.duration)),
 
         unitConfig.parallelConnections * unitConfig.config.repeats,
 
@@ -68,14 +62,16 @@ object Results {
 
   case class UnitSummary
   (
-    performedConnectionInitsSummary: StatsResults,
-    successfulConnectionInitsSummary: StatsResults,
-    failedConnectionInitsSummary: StatsResults,
+    connectionInitsSummary: StatsResults,
 
     expectedDbCalls: Int,
 
     executedDbCallsSummary: StatsResults,
     successfulDbCallsSummary: StatsResults,
     failedDbCallsSummary: StatsResults)
+
+  class ConnectionInitException(e: Throwable) extends RuntimeException(e)
+
+  class UnitRunException(e: Throwable) extends RuntimeException(e)
 
 }

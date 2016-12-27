@@ -3,7 +3,6 @@ package eu.semberal.dbstress.config
 import java.io.InputStreamReader
 
 import org.scalatest.{Matchers, FlatSpec}
-import scala.reflect.ClassTag
 import resource._
 
 class ConfigParserTest extends FlatSpec with Matchers {
