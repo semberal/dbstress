@@ -3,8 +3,8 @@ import sbt.Keys._
 val akkaVersion = "2.4.16"
 
 val dependencies = Seq(
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-typed-experimental" % akkaVersion,
   "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
   "org.yaml" % "snakeyaml" % "1.17",
   "com.jsuereth" %% "scala-arm" % "2.0",
@@ -13,9 +13,8 @@ val dependencies = Seq(
   "com.github.scopt" %% "scopt" % "3.5.0",
   "org.apache.commons" % "commons-lang3" % "3.5",
   "ch.qos.logback" % "logback-classic" % "1.1.8" % "runtime",
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test, it",
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test, it",
-  "com.h2database" % "h2" % "1.4.193" % "test, it"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test, it"
+  , "org.postgresql" % "postgresql" % "9.4.1212"
 )
 
 lazy val root = (project in file(".")).settings(
