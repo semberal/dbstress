@@ -71,12 +71,12 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
             val dbCallId = DbCallId(scenarioId, connectionId, IdGen.genStatementId())
             val start = LocalDateTime.now()
             connection.map(c =>
-              managed(c.createStatement()).map(statement =>
-                if (statement.execute(urConfig.dbConfig.query))
+              managed(c.createStatement()).map { statement =>
+                if (statement.execute(urConfig.dbConfig.query.replace(IdGen.IdPlaceholder, dbCallId.toString)))
                   FetchedRows(Iterator.continually(statement.getResultSet.next()).takeWhile(identity).length)
                 else
                   UpdateCount(statement.getUpdateCount)
-              ).tried match {
+              }.tried match {
                 case Success(result) =>
                   DbCallSuccess(start, LocalDateTime.now(), dbCallId, result) :: l
                 case Failure(e) =>
