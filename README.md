@@ -53,7 +53,6 @@ The following unit parameters have to be specified in the YAML document:
 * JDBC driver class name (Optional, in most cases it shouldn't be necessary)
 * Number of parallel database connections (i.e. simultaneous database sessions) - further referred as `PAR`
 * How many times should the query be repeated (various statistics are calculated from individual samples) - further referred as `REP`
-* Query timeout (Optional, use with caution - see the [Threading](#threading) section for details
 * Connection initiation timeout (Optional)
 
 Most of the configuration options above should be clear, two most important ones which need further clarification are parallel connections and repeats.
