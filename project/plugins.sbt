@@ -1,1 +1,1 @@
-addSbtPlugin("org.xerial.sbt" % "sbt-pack" % "0.7.7")
+addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.1.4")

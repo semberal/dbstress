@@ -164,26 +164,7 @@ The CSV summary file contains statistical values (min, max, mean, median and sta
 ## Issues
 If you have any problem with the application, find a bug or encounter an unexpected behaviour, please [create an issue](https://github.com/semberal/dbstress/issues/new) in the _dbstress_ [issue tracker](https://github.com/semberal/dbstress/issues) on GitHub.
 
-<!--
-## Roadmap
+## Building
 
-### 2.0
-Main theme of the 2.0 release will be distributed testing. It is often the case you have several workers and you would
-like to point them all 
--->
-
-<!--
-## Technical description
-
-_dbstress_ is written in the Scala programming language and is implemented using Akka actors. The following diagram describes the actor hierarchy:
-
-![dbstress actors](./images/Actors.png)
--->
-
-<!--
-## F.A.Q.
-
-### Does dbstress support non-relational databases, such as MongoDB, as well?
- 
-Unfortunately, it doesn't. Currently _dbstress_ only supports JDBC access and there is no plan implement support for non-JDBC databases. Community contributions are always welcome, though.
--->
+You can build your own _dbstress_ distribution by cloning this repo and running `sbt universal:packageBin` for _zip_
+package or `sbt universal:packageZipTarball` for a tarball.
