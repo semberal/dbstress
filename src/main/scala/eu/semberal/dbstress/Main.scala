@@ -5,7 +5,7 @@ import java.util.concurrent.TimeoutException
 
 import akka.actor.ActorSystem
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import eu.semberal.dbstress.config.ConfigParser.parseConfigurationYaml
 import eu.semberal.dbstress.model.Results.{ConnectionInitException, UnitRunException}
 import eu.semberal.dbstress.util.{CsvResultsExport, ResultsExport}

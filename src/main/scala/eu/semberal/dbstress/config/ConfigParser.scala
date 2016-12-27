@@ -7,7 +7,7 @@ import eu.semberal.dbstress.model.Configuration._
 import org.yaml.snakeyaml.Yaml
 import resource._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 import scala.util.{Failure, Success}
 
@@ -28,7 +28,7 @@ object ConfigParser {
     val yaml = new Yaml
 
     managed(reader).map { reader =>
-      yaml.loadAll(reader).map(x => Map(x.asInstanceOf[JMap[String, Object]].toList: _*))
+      yaml.loadAll(reader).asScala.map(x => Map(x.asInstanceOf[JMap[String, Object]].asScala.toList: _*))
     }.tried match {
       case Failure(e) => Left(e.getMessage)
       case Success(foo) =>

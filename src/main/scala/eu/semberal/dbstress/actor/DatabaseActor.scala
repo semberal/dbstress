@@ -1,16 +1,16 @@
 package eu.semberal.dbstress.actor
 
 import java.sql.{Connection, DriverManager, SQLException}
+import java.time.LocalDateTime
 
 import akka.actor.{Actor, Props}
 import akka.event.LoggingReceive
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import eu.semberal.dbstress.actor.ControllerActor.{UnitRunError, UnitRunFinished, UnitRunInitializationFailed, UnitRunInitializationFinished}
 import eu.semberal.dbstress.actor.DatabaseActor.{ConnectionTimeoutException, InitConnection, StartUnitRun}
 import eu.semberal.dbstress.model.Configuration.UnitRunConfig
 import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.util.IdGen
-import org.joda.time.DateTime
 import resource._
 
 import scala.concurrent.duration.DurationInt
@@ -35,7 +35,7 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
   override def receive: Receive = LoggingReceive {
     case InitConnection =>
       val s = sender()
-      val start = DateTime.now()
+      val start = LocalDateTime.now()
 
       val future = {
         val initFuture = Future {
@@ -56,7 +56,7 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
         case Success(c) =>
           s ! UnitRunInitializationFinished
           this.connection = Some(c)
-          this.connInitResult = Some(DbConnInitResult(start, DateTime.now()))
+          this.connInitResult = Some(DbConnInitResult(start, LocalDateTime.now()))
         case Failure(e) =>
           s ! UnitRunInitializationFailed(new ConnectionInitException(e))
       }(systemDispatcher)
@@ -69,7 +69,7 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
         prevFuture.flatMap { l =>
           Future {
             val dbCallId = DbCallId(scenarioId, connectionId, IdGen.genStatementId())
-            val start = DateTime.now()
+            val start = LocalDateTime.now()
             connection.map(c =>
               managed(c.createStatement()).map(statement =>
                 if (statement.execute(urConfig.dbConfig.query))
@@ -78,13 +78,13 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
                   UpdateCount(statement.getUpdateCount)
               ).tried match {
                 case Success(result) =>
-                  DbCallSuccess(start, DateTime.now(), dbCallId, result) :: l
+                  DbCallSuccess(start, LocalDateTime.now(), dbCallId, result) :: l
                 case Failure(e) =>
-                  DbCallFailure(start, DateTime.now(), dbCallId, e) :: l
+                  DbCallFailure(start, LocalDateTime.now(), dbCallId, e) :: l
               }
             ).getOrElse {
               val e = new IllegalStateException("Connection not initialized")
-              DbCallFailure(DateTime.now(), DateTime.now(), dbCallId, e) :: l
+              DbCallFailure(LocalDateTime.now(), LocalDateTime.now(), dbCallId, e) :: l
             }
           }(dbDispatcher)
         }(systemDispatcher)

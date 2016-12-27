@@ -18,7 +18,7 @@ class OrchestratorIntegrationTest extends FlatSpecLike with Matchers with Implic
       val lines = source.getLines().toList
       lines should have size 3
       lines.tail.foreach { line =>
-        line should startWith regex "\"unit[1-2]{1}\"".r
+        line should startWith regex "unit[1-2]{1}".r
       }
     }
   }

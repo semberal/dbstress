@@ -3,7 +3,7 @@ package eu.semberal.dbstress
 import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
-import com.typesafe.scalalogging.slf4j.LazyLogging
+import com.typesafe.scalalogging.LazyLogging
 import eu.semberal.dbstress.actor.ControllerActor
 import eu.semberal.dbstress.actor.ControllerActor.RunScenario
 import eu.semberal.dbstress.model.Configuration.ScenarioConfig

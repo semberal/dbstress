@@ -1,16 +1,16 @@
 package eu.semberal.dbstress.util
 
-import java.io.{Writer, File, FileWriter, BufferedWriter}
+import java.io.{BufferedWriter, File, FileWriter, Writer}
+import java.time.LocalDateTime
 
-import breeze.io.CSVWriter
+import com.github.tototoshi.csv.CSVWriter
 import eu.semberal.dbstress.Defaults._
 import eu.semberal.dbstress.model.Results.ScenarioResult
-import org.joda.time.DateTime._
-import resource._
 import eu.semberal.dbstress.util.ModelExtensions._
+import resource._
 
 trait ResultsExport {
-  protected val curr = filePathFriendlyDateTimeFormat.print(now())
+  protected val curr = filePathFriendlyDateTimeFormat.format(LocalDateTime.now())
 
   def export(sr: ScenarioResult): Unit
 
@@ -56,6 +56,6 @@ class CsvResultsExport(outputDir: File) extends ResultsExport {
       )
     ): _*)
 
-    CSVWriter.write(w, header :: rows)
+    CSVWriter.open(w).writeAll(header :: rows)
   }
 }
