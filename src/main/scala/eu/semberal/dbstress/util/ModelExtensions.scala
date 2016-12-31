@@ -23,7 +23,7 @@ object ModelExtensions {
   }
 
   implicit class DoubleOpt[T](o: Option[T]) {
-    def getOrMissingString(): String = o.map {
+    def getOrMissingString: String = o.map {
       case x: Double => Precision.round(x, 2).toString
       case x => x.toString
     }.getOrElse("-")
