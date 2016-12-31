@@ -19,7 +19,7 @@ class Orchestrator(actorSystem: ActorSystem) extends LazyLogging {
 
     val controller = actorSystem.actorOf(ControllerActor.props(sc), "controller")
 
-    implicit val timeout: Timeout = Defaults.ScenarioTimeout
+    implicit val timeout: Timeout = Utils.ScenarioTimeout
 
     implicit val executionContext = actorSystem.dispatcher
     val es = new ExportingService(exports)
