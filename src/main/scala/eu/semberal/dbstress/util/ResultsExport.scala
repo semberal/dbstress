@@ -28,6 +28,8 @@ class CsvResultsExport(outputDir: File) extends ResultsExport with LazyLogging {
       val header = IndexedSeq(
         "name", "description", "uri", "parallelConnections", "repeats",
 
+        "connectionInitsMin", "connectionInitsMax", "connectionInitsMean", "connectionInitsMedian", "connectionInitsStddev",
+
         "expectedDbCalls", "executedDbCalls", "successfulDbCalls", "failedDbCalls",
 
         "executedDbCallsMin", "executedDbCallsMax", "executedDbCallsMean", "executedDbCallsMedian", "executedDbCallsStddev",
@@ -41,6 +43,10 @@ class CsvResultsExport(outputDir: File) extends ResultsExport with LazyLogging {
         IndexedSeq(
           s.unitConfig.name, s.unitConfig.description.getOrElse(""), s.unitConfig.config.dbConfig.uri,
           s.unitConfig.parallelConnections.toString, s.unitConfig.config.repeats.toString,
+
+          s.summary.connectionInitsSummary.min.getOrMissingString, s.summary.connectionInitsSummary.max.getOrMissingString,
+          s.summary.connectionInitsSummary.mean.getOrMissingString, s.summary.connectionInitsSummary.median.getOrMissingString,
+          s.summary.connectionInitsSummary.stddev.getOrMissingString,
 
           s.summary.expectedDbCalls.toString, s.summary.executedDbCallsSummary.count.toString, s.summary.successfulDbCallsSummary.count.toString,
           s.summary.failedDbCallsSummary.count.toString,
