@@ -1,6 +1,7 @@
 package eu.semberal.dbstress.util
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import org.apache.commons.math3.util.Precision
 
 object ModelExtensions {
 
@@ -8,7 +9,7 @@ object ModelExtensions {
 
     private lazy val ds = new DescriptiveStatistics(l.map(_.toDouble).toArray)
 
-    private def doCalculate(f: DescriptiveStatistics => Double): Option[Double] = if(l.isEmpty) None else Some(f(ds))
+    private def doCalculate(f: DescriptiveStatistics => Double): Option[Double] = if (l.isEmpty) None else Some(f(ds))
 
     def median: Option[Double] = doCalculate(_.getPercentile(50))
 
@@ -16,12 +17,16 @@ object ModelExtensions {
 
     def stddev: Option[Double] = doCalculate(_.getStandardDeviation)
 
-    def minimum: Option[Long] = if(l.isEmpty) None else Some(l.min)
+    def minimum: Option[Long] = if (l.isEmpty) None else Some(l.min)
 
-    def maximum: Option[Long] = if(l.isEmpty) None else Some(l.max)
+    def maximum: Option[Long] = if (l.isEmpty) None else Some(l.max)
   }
 
-  implicit class StringifiedOption[T](o: Option[T]) {
-    def getOrMissingString: String = o.map(_.toString).getOrElse("-")
+  implicit class DoubleOpt[T](o: Option[T]) {
+    def getOrMissingString(): String = o.map {
+      case x: Double => Precision.round(x, 2).toString
+      case x => x.toString
+    }.getOrElse("-")
   }
+
 }
