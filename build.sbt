@@ -12,7 +12,7 @@ val dependencies = Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.scopt" %% "scopt" % "3.5.0",
   "org.apache.commons" % "commons-lang3" % "3.5",
-  "ch.qos.logback" % "logback-classic" % "1.1.8" % "runtime",
+  "ch.qos.logback" % "logback-classic" % "1.1.8",
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion % "test, it",
   "org.scalatest" %% "scalatest" % "3.0.1" % "test, it",
   "com.h2database" % "h2" % "1.4.193" % "test, it"
