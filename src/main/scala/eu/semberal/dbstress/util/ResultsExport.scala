@@ -5,19 +5,18 @@ import java.time.LocalDateTime
 
 import com.github.tototoshi.csv.CSVWriter
 import com.typesafe.scalalogging.LazyLogging
-import eu.semberal.dbstress.Defaults._
+import eu.semberal.dbstress.Utils._
 import eu.semberal.dbstress.model.Results.ScenarioResult
 import eu.semberal.dbstress.util.ModelExtensions._
 import resource._
 
 trait ResultsExport {
-  protected val curr = filePathFriendlyDateTimeFormat.format(LocalDateTime.now())
+  protected val curr: String = filePathFriendlyDateTimeFormat.format(LocalDateTime.now())
 
   def export(sr: ScenarioResult): Unit
 
   protected def withWriter(filePath: String)(op: Writer => Unit): Unit =
     for (b <- managed(new BufferedWriter(new FileWriter(filePath)))) op(b)
-
 }
 
 class CsvResultsExport(outputDir: File) extends ResultsExport with LazyLogging {

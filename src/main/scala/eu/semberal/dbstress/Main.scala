@@ -74,7 +74,7 @@ object Main extends LazyLogging {
             val future: Future[Unit] = new Orchestrator(system).run(sc, exports)
             val bugMsg = "This is most likely an application bug. Please, file an issue in the dbstress bug tracker"
             val exitStatus: Int = try {
-              Await.result(future, Defaults.ScenarioTimeout)
+              Await.result(future, Utils.ScenarioTimeout)
               logger.info("Scenario finished successfully")
               0
             } catch {
@@ -93,7 +93,7 @@ object Main extends LazyLogging {
             }
 
             try {
-              Await.result(system.terminate(), Defaults.ActorSystemShutdownTimeout)
+              Await.result(system.terminate(), Utils.ActorSystemShutdownTimeout)
             } catch {
               case e: TimeoutException =>
                 logger.warn("Unable to shutdown the actor system within the specified time limit", e)

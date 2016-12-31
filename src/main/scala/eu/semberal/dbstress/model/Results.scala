@@ -1,21 +1,14 @@
 package eu.semberal.dbstress.model
 
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-
 import eu.semberal.dbstress.model.Configuration.UnitConfig
 
 object Results {
 
   trait OperationResult {
-    val start: LocalDateTime
-
-    val finish: LocalDateTime
-
-    lazy val duration: Long = ChronoUnit.MILLIS.between(start, finish)
+    val duration: Long
   }
 
-  case class DbConnInitResult(start: LocalDateTime, finish: LocalDateTime) extends OperationResult
+  case class DbConnInitResult(duration: Long) extends OperationResult
 
   sealed trait DbCallResult extends OperationResult {
     val dbCallId: DbCallId
@@ -25,9 +18,9 @@ object Results {
     override def toString = s"${scenarioId}_${connectionId}_$statementId"
   }
 
-  case class DbCallSuccess(start: LocalDateTime, finish: LocalDateTime, dbCallId: DbCallId, stmtResult: StatementResult) extends DbCallResult
+  case class DbCallSuccess(duration: Long, dbCallId: DbCallId, stmtResult: StatementResult) extends DbCallResult
 
-  case class DbCallFailure(start: LocalDateTime, finish: LocalDateTime, dbCallId: DbCallId, e: Throwable) extends DbCallResult
+  case class DbCallFailure(duration: Long, dbCallId: DbCallId, e: Throwable) extends DbCallResult
 
   sealed trait StatementResult
 
