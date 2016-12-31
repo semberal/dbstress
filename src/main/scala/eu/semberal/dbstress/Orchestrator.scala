@@ -22,9 +22,7 @@ class Orchestrator(actorSystem: ActorSystem) extends LazyLogging {
     implicit val timeout: Timeout = Defaults.ScenarioTimeout
 
     implicit val executionContext = actorSystem.dispatcher
-
-    val scenarioResultFuture = (controller ? RunScenario).mapTo[ScenarioResult]
-
-    scenarioResultFuture.flatMap(sr => new ExportingService(exports).export(sr))
+    val es = new ExportingService(exports)
+    (controller ? RunScenario).mapTo[ScenarioResult].flatMap(es.export)
   }
 }

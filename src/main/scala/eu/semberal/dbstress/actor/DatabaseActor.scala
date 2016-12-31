@@ -13,8 +13,8 @@ import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.util.IdGen
 import resource._
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 import scala.util.{Failure, Success}
 
 class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfig) extends Actor with LazyLogging {
@@ -58,7 +58,7 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
           this.connection = Some(c)
           this.connInitResult = Some(DbConnInitResult(start, LocalDateTime.now()))
         case Failure(e) =>
-          s ! UnitRunInitializationFailed(new ConnectionInitException(e))
+          s ! UnitRunInitializationFailed(e)
       }(systemDispatcher)
 
     case StartUnitRun =>
@@ -80,6 +80,7 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
                 case Success(result) =>
                   DbCallSuccess(start, LocalDateTime.now(), dbCallId, result) :: l
                 case Failure(e) =>
+                  logger.warn(s"Query execution failed: ${e.getMessage}")
                   DbCallFailure(start, LocalDateTime.now(), dbCallId, e) :: l
               }
             ).getOrElse {
