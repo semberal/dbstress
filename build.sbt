@@ -29,3 +29,4 @@ lazy val root = (project in file(".")).settings(
 )).configs(IntegrationTest).settings(Defaults.itSettings: _*)
   .settings(libraryDependencies ++= dependencies: _*)
   .enablePlugins(JavaAppPackaging)
+  .settings(scriptClasspath := Seq("*"))
