@@ -1,0 +1,7 @@
+dbstress
+
+* Create scenario configuration YAML (see sample_config.yaml)
+* Download JDBC driver for your database and copy it into the lib/ directory
+* Run bin/dbstress -c /path/to/scenario_config.yaml -o /output/directory
+
+For more information about the project, visit https://github.com/semberal/dbstress
