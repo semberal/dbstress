@@ -41,7 +41,12 @@ class ControllerActor(sc: ScenarioConfig) extends Actor with LazyLogging {
       context.become(waitForInitConfirmation(client, collectedCount + 1))
 
     case UnitRunInitializationFailed(e) =>
-      logger.error(s"Cannot initialize database connection: ${e.getMessage}")
+      val msg = e match {
+        case _: ClassNotFoundException => s"Class ${e.getMessage} not found"
+        case _ => e.getMessage
+      }
+
+      logger.error(s"Cannot initialize database connection: $msg")
       context.stop(self)
       client ! Status.Failure(new ConnectionInitException(e))
   }
