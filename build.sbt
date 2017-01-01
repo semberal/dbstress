@@ -28,5 +28,6 @@ lazy val root = (project in file(".")).settings(
   "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
 )).configs(IntegrationTest).settings(Defaults.itSettings: _*)
   .settings(libraryDependencies ++= dependencies: _*)
-  .enablePlugins(JavaAppPackaging)
-  .settings(scriptClasspath := Seq("*"))
+  .settings(packSettings: _*).settings(packMain := Map("dbstress" -> "eu.semberal.dbstress.Main"))
+  .settings(packArchiveExcludes := List("VERSION", "Makefile")
+)

@@ -1,0 +1,22 @@
+---
+unit_name: unit1
+description: Example of a successful unit # optional
+query: select 1
+uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver # Optional, only specify if java cannot detect it
+username: user1
+password: "password" # optional if provided on command line
+parallel_connections: 5
+repeats: 10
+connection_timeout: 3000 # in ms, optional
+---
+unit_name: unit2
+description: Example of an unit the queries of which will always fail
+query: zelect 1
+uri: "jdbc:h2:mem://localhost"
+driver_class: org.h2.Driver
+username: sa
+password: ""
+parallel_connections: 4
+repeats: 50
+connection_timeout: 500
