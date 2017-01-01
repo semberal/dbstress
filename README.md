@@ -167,5 +167,4 @@ If you have any problem with the application, find a bug or encounter an unexpec
 
 ## Building
 
-You can build your own _dbstress_ distribution by cloning this repo and running `sbt universal:packageBin` for _zip_
-package or `sbt universal:packageZipTarball` for a tarball.
+You can build your own distribution by cloning this repo and running `sbt packArchive`.
