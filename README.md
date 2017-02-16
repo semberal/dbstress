@@ -1,6 +1,6 @@
 # dbstress
 
-[![Join the chat at https://gitter.im/dbstress/Lobby](https://badges.gitter.im/dbstress/Lobby.svg)](https://gitter.im/dbstress/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/dbstress/Lobby](https://badges.gitter.im/dbstress/Lobby.svg)](https://gitter.im/semberal/dbstress)
 [![Build Status](https://travis-ci.org/semberal/dbstress.svg?branch=master)](https://travis-ci.org/semberal/dbstress)
 
 ## Introduction
