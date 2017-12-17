@@ -1,6 +1,5 @@
 # dbstress
 
-[![Join the chat at https://gitter.im/dbstress/Lobby](https://badges.gitter.im/dbstress/Lobby.svg)](https://gitter.im/semberal/dbstress)
 [![Build Status](https://travis-ci.org/semberal/dbstress.svg?branch=master)](https://travis-ci.org/semberal/dbstress)
 
 ## Introduction
