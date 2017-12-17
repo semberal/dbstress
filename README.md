@@ -148,8 +148,7 @@ from connection initializations and all/successful/failed database calls.
 
 ## Issues
 If you have any problem with the application, find a bug or encounter an unexpected behaviour, 
-please [create an issue](https://github.com/semberal/dbstress/issues/new) 
-or ask on the [Gitter channel](https://gitter.im/dbstress/Lobby).
+please [create an issue](https://github.com/semberal/dbstress/issues/new).
 
 ## Building
 
