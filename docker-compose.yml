@@ -1,0 +1,13 @@
+dbstress:
+  build: .
+  links:
+    - mysql
+  volumes:
+    - ./src/tests/resources/:/scenarios/:ro
+
+mysql:
+  image: mariadb
+  environment:
+    - MYSQL_ROOT_PASSWORD=root
+    - MYSQL_USER=user
+    - MYSQL_PASSWORD=user
