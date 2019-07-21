@@ -5,7 +5,17 @@ jobs:
       - image: circleci/openjdk:8-jdk
     working_directory: ~/repo
     environment:
-      JVM_OPTS: -Xmx3200m
+      JVM_OPTS: -Xmx2048m
     steps:
       - checkout
-      - run: sbt test:test it:test
+      - run:
+          name: Run tests
+          command: sbt test:test it:test
+      - run:
+          name: Build distribution
+          command: sbt packArchive
+      - run:
+          name: Copy archives to artifact directory
+          command: mkdir /target/distribution && cp target/dbstress-*.zip target/dbstress-*.tgz target/distribution
+      - store_artifacts:
+          path: /target/distribution
