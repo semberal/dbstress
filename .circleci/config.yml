@@ -16,6 +16,6 @@ jobs:
           command: sbt packArchive
       - run:
           name: Copy archives to artifact directory
-          command: mkdir /target/distribution && cp target/dbstress-*.zip target/dbstress-*.tgz target/distribution
+          command: mkdir target/distribution && cp target/dbstress-*.zip target/dbstress-*.tgz target/distribution
       - store_artifacts:
-          path: /target/distribution
+          path: target/distribution
