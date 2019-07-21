@@ -15,7 +15,7 @@ val dependencies = Seq(
   "ch.qos.logback" % "logback-classic" % Versions.logbackClassic,
   "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test, it",
   "org.scalatest" %% "scalatest" % Versions.scalatest % "test, it",
-  "com.h2database" % "h2" % Versions.h2 % "test, it"
+  "org.postgresql" % "postgresql" % Versions.postgres % "test, it"
 )
 
 lazy val root = (project in file(".")).enablePlugins(PackPlugin).settings(

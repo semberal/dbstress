@@ -8,8 +8,8 @@ import scala.io.Source
 
 class OrchestratorIntegrationTest extends FlatSpecLike with Matchers with ImplicitSender with AbstractDbstressIntegrationTest {
 
-  "Orchestrator" should "successfully launch the application and check results" in {
-    val tmpDir = executeTest("config1.yaml")
+  "Orchestrator" should "successfully launch the test of PostgreSQL and verify results" in {
+    val tmpDir = executeTest("config.postgres.yaml")
 
     /* Test generated CSV file*/
     val csvFiles = tmpDir.listFiles(csvFilter)

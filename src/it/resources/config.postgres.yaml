@@ -2,10 +2,10 @@
 unit_name: unit1
 description: Example of a successful unit
 query: "select 1"
-uri: "jdbc:h2:mem://localhost"
-driver_class: org.h2.Driver
-username: sa
-password: ""
+uri: "jdbc:postgresql://localhost:5432/dbstress"
+driver_class: org.postgresql.Driver
+username: dbstress
+password: dbstress
 parallel_connections: 18
 repeats: 30
 connection_timeout: 3000
@@ -14,10 +14,10 @@ connection_timeout: 3000
 unit_name: unit2
 description: Example of an unit the queries of which will always fail
 query: zelect 1
-uri: "jdbc:h2:mem://localhost"
-driver_class: org.h2.Driver
-username: sa
-password: ""
+uri: "jdbc:postgresql://localhost:5432/dbstress"
+driver_class: org.postgresql.Driver
+username: dbstress
+password: dbstress
 parallel_connections: 4
 repeats: 50
 connection_timeout: 500

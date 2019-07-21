@@ -150,6 +150,13 @@ from connection initializations and all/successful/failed database calls.
 If you have any problem with the application, find a bug or encounter an unexpected behaviour, 
 please [create an issue](https://github.com/semberal/dbstress/issues/new).
 
+## Running integrations tests
+
+For integration tests (`sbt it:test`), the following docker container must be running:
+
+```
+docker run -e POSTGRES_USER=dbstress -e POSTGRES_PASSWORD=dbstress -e POSTGRES_DB=dbstress -p 5432:5432 -d postgres:latest
+```
 ## Building
 
 You can build your own distribution by cloning this repo and running `sbt packArchive`.

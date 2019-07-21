@@ -3,6 +3,12 @@ jobs:
   build:
     docker:
       - image: circleci/openjdk:8-jdk
+      - image: postgres:latest
+        environment:
+          POSTGRES_USER: dbstress
+          POSTGRES_PASSWORD: dbstress
+          POSTGRES_DB: dbstress
+
     working_directory: ~/repo
     environment:
       JVM_OPTS: -Xmx2048m

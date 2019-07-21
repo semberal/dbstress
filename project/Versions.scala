@@ -10,5 +10,5 @@ object Versions {
   val commonsLang3 = "3.9"
   val logbackClassic = "1.2.3"
   val scalatest = "3.0.8"
-  val h2 = "1.4.199"
+  val postgres = "42.2.6"
 }
