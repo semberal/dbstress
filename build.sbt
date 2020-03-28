@@ -1,7 +1,5 @@
 import sbt.Keys._
 
-val projectVersion = "1.1.0-SNAPSHOT"
-
 val dependencies = Seq(
   "com.typesafe.akka" %% "akka-actor" % Versions.akka,
   "com.typesafe.akka" %% "akka-slf4j" % Versions.akka,
@@ -21,7 +19,7 @@ val dependencies = Seq(
 lazy val root = (project in file(".")).enablePlugins(PackPlugin).settings(
   organization := "eu.semberal",
   name := "dbstress",
-  version := projectVersion,
+  version := sys.env.getOrElse("DBSTRESS_CI_BUILD_VERSION", "0.0.0-SNAPSHOT"),
   scalaVersion := Versions.scala,
   scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Ywarn-unused-import")
 ).settings(resolvers ++= Seq(

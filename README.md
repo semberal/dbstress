@@ -1,6 +1,6 @@
 # dbstress
 
-[![CircleCI](https://circleci.com/gh/semberal/dbstress.svg?style=svg)](https://circleci.com/gh/semberal/dbstress)
+![](https://github.com/semberal/dbstress/workflows/build/badge.svg)
 
 ## Introduction
 
