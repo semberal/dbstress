@@ -1,6 +1,6 @@
 # dbstress
 
-![](https://github.com/semberal/dbstress/workflows/build/badge.svg)
+ [![GitHub Actions](https://github.com/semberal/dbstress/workflows/build/badge.svg)](https://github.com/semberal/dbstress/actions)
 
 ## Introduction
 
