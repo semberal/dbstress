@@ -76,11 +76,10 @@ Every _unit run_ opens a database connection.
 In the _query execution phase_, every unit run sends the configured query `REP` times sequentially to the database. 
 Therefore, every unit sends the query to the database `PAR*REP` times.
 
-You can see the meaning of `PAR` and `REP` variables, as well as the overall description of individual components 
-and how they parallelize in the following diagram:
+The following diagram shows the meaning of the `PAR` and `REP` variables, as well as the overall description of 
+individual components and how they parallelize:
 
-![Components overview](images/Terminology.png?raw=true)
-
+![Components overview](images/scenario.jpg?raw=true)
 
 ### Threading
 In _dbstress_, there are two important thread pools. The first one is used by the Akka internally and can spawn up 
