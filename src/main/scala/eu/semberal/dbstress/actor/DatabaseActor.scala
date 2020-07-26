@@ -11,11 +11,11 @@ import eu.semberal.dbstress.actor.DatabaseActor.{ConnectionTimeoutException, Ini
 import eu.semberal.dbstress.model.Configuration.UnitRunConfig
 import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.util.IdGen
-import resource._
+import better.files._
 
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfig) extends Actor with LazyLogging {
 
@@ -72,17 +72,19 @@ class DatabaseActor(scenarioId: String, unitName: String, urConfig: UnitRunConfi
             val dbCallId = DbCallId(scenarioId, connectionId, IdGen.genStatementId())
             val start = System.nanoTime()
             connection.map(c =>
-              managed(c.createStatement()).map { statement =>
-                if (statement.execute(urConfig.dbConfig.query.replace(IdGen.IdPlaceholder, dbCallId.toString)))
-                  FetchedRows(Iterator.continually(statement.getResultSet.next()).takeWhile(identity).length)
-                else
-                  UpdateCount(statement.getUpdateCount)
-              }.tried match {
-                case Success(result) =>
-                  DbCallSuccess(Utils.toMillis(start, System.nanoTime()), dbCallId, result) :: l
-                case Failure(e) =>
-                  logger.warn(s"Query execution failed: ${e.getMessage}")
-                  DbCallFailure(Utils.toMillis(start, System.nanoTime()), dbCallId, e) :: l
+              c.createStatement().autoClosed.apply { statement =>
+                Try {
+                  if (statement.execute(urConfig.dbConfig.query.replace(IdGen.IdPlaceholder, dbCallId.toString)))
+                    FetchedRows(Iterator.continually(statement.getResultSet.next()).takeWhile(identity).length)
+                  else
+                    UpdateCount(statement.getUpdateCount)
+                } match {
+                  case Success(result) =>
+                    DbCallSuccess(Utils.toMillis(start, System.nanoTime()), dbCallId, result) :: l
+                  case Failure(e) =>
+                    logger.warn(s"Query execution failed: ${e.getMessage}")
+                    DbCallFailure(Utils.toMillis(start, System.nanoTime()), dbCallId, e) :: l
+                }
               }
             ).getOrElse {
               val e = new IllegalStateException("Connection not initialized")

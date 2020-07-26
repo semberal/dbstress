@@ -3,19 +3,19 @@ package eu.semberal.dbstress.model
 import eu.semberal.dbstress.model.Configuration.{DbCommunicationConfig, UnitConfig, UnitRunConfig}
 import eu.semberal.dbstress.model.Results._
 import eu.semberal.dbstress.model.UnitSummaryTest.unitResult
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
 
-class UnitSummaryTest extends FlatSpec with Matchers {
+class UnitSummaryTest extends AnyFlatSpec {
 
   private val summary = unitResult.summary
 
   behavior of "UnitSummary"
 
   it should "correctly calculate summary information" in {
-    summary.expectedDbCalls should be(10)
-    summary.executedDbCallsSummary.count should be(2)
-    summary.successfulDbCallsSummary.count should be(1)
-    summary.failedDbCallsSummary.count should be(1)
+    assert(summary.expectedDbCalls === 10)
+    assert(summary.executedDbCallsSummary.count === 2)
+    assert(summary.successfulDbCallsSummary.count === 1)
+    assert(summary.failedDbCallsSummary.count === 1)
   }
 }
 

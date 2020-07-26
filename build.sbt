@@ -5,7 +5,7 @@ val dependencies = Seq(
   "com.typesafe.akka" %% "akka-slf4j" % Versions.akka,
   "com.typesafe.scala-logging" %% "scala-logging" % Versions.scalaLogging,
   "org.yaml" % "snakeyaml" % Versions.snakeYaml,
-  "com.jsuereth" %% "scala-arm" % Versions.scalaArm,
+  "com.github.pathikrit" %% "better-files" % Versions.betterFiles,
   "com.github.tototoshi" %% "scala-csv" % Versions.scalaCsv,
   "org.apache.commons" % "commons-math3" % Versions.commonsMath,
   "com.github.scopt" %% "scopt" % Versions.scopt,
@@ -13,6 +13,7 @@ val dependencies = Seq(
   "ch.qos.logback" % "logback-classic" % Versions.logbackClassic,
   "com.typesafe.akka" %% "akka-testkit" % Versions.akka % "test, it",
   "org.scalatest" %% "scalatest" % Versions.scalatest % "test, it",
+  "org.scalatest" %% "scalatest-flatspec" % Versions.scalatest % "test, it",
   "org.postgresql" % "postgresql" % Versions.postgres % "test, it"
 )
 
@@ -21,10 +22,8 @@ lazy val root = (project in file(".")).enablePlugins(PackPlugin).settings(
   name := "dbstress",
   version := sys.env.getOrElse("DBSTRESS_CI_BUILD_VERSION", "0.0.0-SNAPSHOT"),
   scalaVersion := Versions.scala,
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Ywarn-unused-import")
-).settings(resolvers ++= Seq(
-  "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/"
-)).configs(IntegrationTest).settings(Defaults.itSettings: _*)
+  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Ywarn-unused:imports")
+).configs(IntegrationTest).settings(Defaults.itSettings: _*)
   .settings(libraryDependencies ++= dependencies: _*)
   .settings(packMain := Map("dbstress" -> "eu.semberal.dbstress.Main"))
   .settings(packArchiveExcludes := List("VERSION", "Makefile")

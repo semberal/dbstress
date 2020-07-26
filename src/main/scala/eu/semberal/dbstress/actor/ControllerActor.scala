@@ -51,22 +51,22 @@ class ControllerActor(sc: ScenarioConfig) extends Actor with LazyLogging {
       client ! Status.Failure(new ConnectionInitException(e))
   }
 
-  private def waitForFinish(client: ActorRef, urResults: List[(String, UnitRunResult)]): Receive = LoggingReceive {
+  private def waitForFinish(client: ActorRef, unitRunResults: List[(String, UnitRunResult)]): Receive = LoggingReceive {
     case UnitRunFinished(unitName, result) =>
-      logger.info(s"Finished unit runs: ${urResults.length + 1}/$totalConnections")
-      context.become(waitForFinish(client, (unitName -> result) :: urResults))
-      if (totalConnections - urResults.length == 1) self ! Done
+      logger.info(s"Finished unit runs: ${unitRunResults.length + 1}/$totalConnections")
+      context.become(waitForFinish(client, (unitName -> result) :: unitRunResults))
+      if (totalConnections - unitRunResults.length == 1) self ! Done
 
     case UnitRunError(e) =>
       context.stop(self)
       client ! Status.Failure(e)
 
     case Done =>
-      val allCalls = urResults.flatMap(_._2.callResults)
+      val allCalls = unitRunResults.flatMap(_._2.callResults)
       val failedCalls = allCalls.count(_.isInstanceOf[DbCallFailure])
       val msg = if (failedCalls > 0) s"($failedCalls/${allCalls.length} calls failed)" else ""
       logger.info("All database operations finished {}", msg)
-      val unitResultMap = urResults.groupBy(_._1).mapValues(_.map(_._2))
+      val unitResultMap = unitRunResults.groupBy(_._1).view.mapValues(_.map(_._2))
       client ! ScenarioResult(sc.units.map(conf => UnitResult(conf, unitResultMap(conf.name))).toList)
   }
 }
