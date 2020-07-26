@@ -1,6 +1,5 @@
 package eu.semberal.dbstress
 
-import java.io.File
 import java.util.concurrent.TimeoutException
 
 import akka.actor.ActorSystem
@@ -12,6 +11,8 @@ import eu.semberal.dbstress.model.Results.{ConnectionInitException, UnitRunExcep
 import eu.semberal.dbstress.util.{CsvResultsExport, ResultsExport}
 import org.slf4j.LoggerFactory
 import scopt.OptionParser
+import better.files._
+import java.io.{File => JFile}
 
 import scala.concurrent.{Await, Future}
 
@@ -26,17 +27,19 @@ object Main extends LazyLogging {
 
       head("dbstress", version, "Database performance and stress testing tool")
 
-      opt[File]('c', "config").valueName("CONFIG_FILE").text("Path to the configuration YAML file").required().action { (x, c) =>
-        c.copy(configFile = x)
-      }.validate {
-        case x if !x.exists() => failure(s"File '$x' does not exist")
-        case x if !x.isFile => failure(s"'$x' is not a file")
-        case x if !x.canRead => failure(s"File '$x' is not readable")
-        case _ => success
-      }
+      opt[JFile]('c', "config").valueName("CONFIG_FILE").text("Path to the configuration YAML file").required()
+        .action { (x, c) =>
+          c.copy(configFile = x.toScala)
+        }
+        .validate {
+          case x if !x.exists() => failure(s"File '$x' does not exist")
+          case x if !x.isFile => failure(s"'$x' is not a file")
+          case x if !x.canRead => failure(s"File '$x' is not readable")
+          case _ => success
+        }
 
-      opt[File]('o', "output").valueName("OUTPUT_DIR").text("Output directory").required().action { (x, c) =>
-        c.copy(outputDir = x)
+      opt[JFile]('o', "output").valueName("OUTPUT_DIR").text("Output directory").required().action { (x, c) =>
+        c.copy(outputDir = x.toScala)
       }.validate {
         case x if !x.exists() => failure(s"Directory '$x' does not exist")
         case x if !x.isDirectory => failure(s"'$x' is not a directory")
