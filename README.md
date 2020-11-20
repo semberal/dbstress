@@ -9,9 +9,13 @@ _dbstress_ is an open-source database performance and stress testing tool writte
 (using a database-specific JDBC driver) certain number of times in parallel (possibly against multiple database hosts)
 and generates a CSV with summarized results.
 
+## Prerequisites
+* Java 8 or later
+
 ## Obtaining and running
 
-Download the latest release from the [releases page](https://github.com/semberal/dbstress/releases) (Java 8 is required).
+Download the latest release from the [releases page](https://github.com/semberal/dbstress/releases)
+([nighly builds](https://github.com/semberal/dbstress/actions?query=branch%3Amaster) are also available).
 
 Two command line arguments are mandatory: _scenario configuration_ and _output directory_:
 
