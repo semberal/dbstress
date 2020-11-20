@@ -1,8 +1,14 @@
 name: build
-on: [push]
+on:
+  push:
+  schedule:
+    - cron:  '* 3 * * *'
 jobs:
   build:
-    name: Build
+    strategy:
+      matrix:
+        java: [ 8, 15 ]
+    name: Build (JDK ${{ matrix.java }})
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -17,14 +23,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
         with:
-          java-version: 8
-      - uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
-      - name: Run version script
-        run: python ./scripts/ci-build-version.py
-      - name: Export version as environment variable
-        run: echo ::set-env name=DBSTRESS_CI_BUILD_VERSION::$(python ./scripts/ci-build-version.py)
+          java-version: ${{ matrix.java }}
+      - name: Check formatting with scalafmt
+        run: sbt scalafmtSbtCheck scalafmtCheckAll
       - name: Run tests
         run: sbt test:test
       - name: Run integration tests
@@ -32,7 +33,9 @@ jobs:
       - name: Create distribution
         run: sbt packArchive
       - name: Archive distributions
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2
         with:
-          name: dbstress-archives-bundle-${{env.DBSTRESS_CI_BUILD_VERSION}}
-          path: ./target/dbstress-${{env.DBSTRESS_CI_BUILD_VERSION}}.*
+          name: dbstress-archives-bundle
+          path: |
+            ./target/*.zip
+            ./target/*.tar.gz

@@ -4,9 +4,9 @@
 
 ## Introduction
 
-_dbstress_ is an open-source database performance and stress testing tool written in 
-[Scala](http://www.scala-lang.org/) and [Akka](http://akka.io). It runs a database query 
-(using a database-specific JDBC driver) certain number of times in parallel (possibly against multiple database hosts) 
+_dbstress_ is an open-source database performance and stress testing tool written in
+[Scala](http://www.scala-lang.org/) and [Akka](http://akka.io). It runs a database query
+(using a database-specific JDBC driver) certain number of times in parallel (possibly against multiple database hosts)
 and generates a CSV with summarized results.
 
 ## Obtaining and running
@@ -19,15 +19,15 @@ Two command line arguments are mandatory: _scenario configuration_ and _output d
 bin/dbstress -c /path/to/scenario_config.yaml -o /output/directory
 ```
 
-The application doesn't bundle any JDBC drivers. You'll need to download the driver for your database and place 
+The application doesn't bundle any JDBC drivers. You'll need to download the driver for your database and place
 it into the `lib/` directory.
 
 ## Configuration and terminology
 
-Top level configuration element is a _scenario_, which consists of at least one _unit_. 
+Top level configuration element is a _scenario_, which consists of at least one _unit_.
 A _unit_ represents a particular database operation, along with its configuration.
-All configured units within a scenario run in parallel, independently of each other and their results are also 
-reported separately. Unless you need to do some more advanced testing, such as connecting to the database with 
+All configured units within a scenario run in parallel, independently of each other and their results are also
+reported separately. Unless you need to do some more advanced testing, such as connecting to the database with
 different users or to different schemas, it is perfectly fine to have a scenario with just a single unit.
 
 Unit configuration consists of:
@@ -70,19 +70,19 @@ repeats: 50
 connection_timeout: 500
 ```
 
-The test run consists of two base phases: _connection initialization phase_ and _query execution phase_. 
-In the _connection initialization phase_, each unit spawns `PAR` so called _unit runs_. 
-Every _unit run_ opens a database connection. 
-In the _query execution phase_, every unit run sends the configured query `REP` times sequentially to the database. 
+The test run consists of two base phases: _connection initialization phase_ and _query execution phase_.
+In the _connection initialization phase_, each unit spawns `PAR` so called _unit runs_.
+Every _unit run_ opens a database connection.
+In the _query execution phase_, every unit run sends the configured query `REP` times sequentially to the database.
 Therefore, every unit sends the query to the database `PAR*REP` times.
 
-The following diagram shows the meaning of the `PAR` and `REP` variables, as well as the overall description of 
+The following diagram shows the meaning of the `PAR` and `REP` variables, as well as the overall description of
 individual components and how they parallelize:
 
 ![Components overview](images/scenario.jpg?raw=true)
 
 ### Threading
-In _dbstress_, there are two important thread pools. The first one is used by the Akka internally and can spawn up 
+In _dbstress_, there are two important thread pools. The first one is used by the Akka internally and can spawn up
 to 64 threads (it will be usually much less).
 
 The other thread pool is used for execution of the blocking database calls.
@@ -90,8 +90,8 @@ The number of threads in this thread pool is equal to the total number of databa
 
 ### Database calls labelling
 
-In order to identify individual database calls in the server logs, you can place a random identifier into 
-each query. _dbstress_ supports query labeling with the `@@gen_query_id@@` placeholder. Each occurrence of such 
+In order to identify individual database calls in the server logs, you can place a random identifier into
+each query. _dbstress_ supports query labeling with the `@@gen_query_id@@` placeholder. Each occurrence of such
 placeholder will be replaced with a unique identifier consisting of the following underscore-separated components:
 
 * Scenario ID
@@ -115,16 +115,16 @@ connection_timeout: 500
 query_timeout: 500
 ```
 
-To illustrate how can such labeling can be useful, let's consider debugging and profiling 
-[query labels](https://my.vertica.com/docs/7.1.x/HTML/Content/Authoring/AdministratorsGuide/Profiling/HowToLabelQueriesForProfiling.htm) 
+To illustrate how can such labeling can be useful, let's consider debugging and profiling
+[query labels](https://my.vertica.com/docs/7.1.x/HTML/Content/Authoring/AdministratorsGuide/Profiling/HowToLabelQueriesForProfiling.htm)
 of HPE Vertica. Labels provide an easy way how to pair the test query executions with the database server log entries.
 
 ### Error handling
 
-Various kinds of errors can occur during the scenario run, two most important categories of errors are 
+Various kinds of errors can occur during the scenario run, two most important categories of errors are
 _connection initialization errors_ and _query errors_.
 
-When a connection initialization fails (either due to an exception or a timeout), 
+When a connection initialization fails (either due to an exception or a timeout),
 _dbstress_ does not proceed to the _query execution phase_ and terminates immediately.
 
 Query errors, on the other hand, do not stop the scenario, but they are reported as failures in the resulting CSV.
@@ -142,20 +142,9 @@ The following list summarizes the various exit status codes:
 
 When a scenario run finishes, it creates file `summary.${timestamp}.csv` in the output directory.
 
-The CSV file contains summary statistics (min, max, mean, median and standard deviation) calculated 
+The CSV file contains summary statistics (min, max, mean, median and standard deviation) calculated
 from connection initializations and all/successful/failed database calls.
 
 ## Issues
-If you have any problem with the application, find a bug or encounter an unexpected behaviour, 
+If you have any problem with the application, find a bug or encounter an unexpected behaviour,
 please [create an issue](https://github.com/semberal/dbstress/issues/new).
-
-## Running integrations tests
-
-For integration tests (`sbt it:test`), the following docker container must be running:
-
-```
-docker run -e POSTGRES_USER=dbstress -e POSTGRES_PASSWORD=dbstress -e POSTGRES_DB=dbstress -p 5432:5432 -d postgres:latest
-```
-## Building
-
-You can build your own distribution by cloning this repo and running `sbt packArchive`.

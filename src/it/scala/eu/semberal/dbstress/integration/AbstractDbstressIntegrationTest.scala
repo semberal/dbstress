@@ -15,7 +15,10 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait AbstractDbstressIntegrationTest extends TestKitBase with BeforeAndAfterAll with ScalaFutures {
+trait AbstractDbstressIntegrationTest
+    extends TestKitBase
+    with BeforeAndAfterAll
+    with ScalaFutures {
   this: Suite =>
 
   override implicit lazy val system: ActorSystem = ActorSystem()
@@ -24,11 +27,23 @@ trait AbstractDbstressIntegrationTest extends TestKitBase with BeforeAndAfterAll
     TestKit.shutdownActorSystem(system)
 
   protected def executeTest(configFile: String): File = {
-    val tmpDir = createTempDirectory(s"dbstress_OrchestratorTest_${currentTimeMillis()}_").toFile.toScala
+    val tmpDir = createTempDirectory(
+      s"dbstress_OrchestratorTest_${currentTimeMillis()}_"
+    ).toFile.toScala
 
-    val reader = new BufferedReader(new InputStreamReader(getClass.getClassLoader.getResourceAsStream(configFile))).autoClosed
-    val config = parseConfigurationYaml(reader, Some(""))getOrElse(throw new IllegalStateException("Cannot parse configuration"))
+    val reader = new BufferedReader(
+      new InputStreamReader(
+        getClass.getClassLoader.getResourceAsStream(configFile)
+      )
+    ).autoClosed
+    val config = parseConfigurationYaml(
+      reader,
+      Some("")
+    ) getOrElse (throw new IllegalStateException("Cannot parse configuration"))
     val exports: List[ResultsExport] = new CsvResultsExport(tmpDir) :: Nil
-    whenReady(new Orchestrator(system).run(config, exports), Timeout(Span(10, Seconds)))(_ => tmpDir)
+    whenReady(
+      new Orchestrator(system).run(config, exports),
+      Timeout(Span(10, Seconds))
+    )(_ => tmpDir)
   }
 }

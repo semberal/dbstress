@@ -12,38 +12,50 @@ import eu.semberal.dbstress.util.IdGen
 class ControllerActor(sc: ScenarioConfig) extends Actor with LazyLogging {
   private val totalConnections = sc.units.map(_.parallelConnections).sum
 
-  override def receive: Receive = LoggingReceive {
-    case RunScenario =>
-      val scenarioId = IdGen.genScenarioId()
-      logger.info(s"Starting the scenario (ID: $scenarioId)")
+  override def receive: Receive = LoggingReceive { case RunScenario =>
+    val scenarioId = IdGen.genScenarioId()
+    logger.info(s"Starting the scenario (ID: $scenarioId)")
 
-      sc.units.foreach(u => {
-        (1 to u.parallelConnections).foreach { parId =>
-          val a = context.actorOf(DatabaseActor.props(scenarioId, u.name, u.config), s"dbactor_${u.name}_$parId")
-          a ! InitConnection
-        }
-      })
-      context.become(waitForInitConfirmation(sender(), 0))
-      logger.info(s"Waiting for $totalConnections database connections to be initialized")
+    sc.units.foreach(u => {
+      (1 to u.parallelConnections).foreach { parId =>
+        val a = context.actorOf(
+          DatabaseActor.props(scenarioId, u.name, u.config),
+          s"dbactor_${u.name}_$parId"
+        )
+        a ! InitConnection
+      }
+    })
+    context.become(waitForInitConfirmation(sender(), 0))
+    logger.info(
+      s"Waiting for $totalConnections database connections to be initialized"
+    )
   }
 
-  private def waitForInitConfirmation(client: ActorRef, collectedCount: Int): Receive = LoggingReceive {
+  private def waitForInitConfirmation(
+      client: ActorRef,
+      collectedCount: Int
+  ): Receive = LoggingReceive {
 
-    case UnitRunInitializationFinished if collectedCount + 1 == totalConnections =>
-      logger.info("All database connections initialized, proceeding to the query execution phase")
+    case UnitRunInitializationFinished
+        if collectedCount + 1 == totalConnections =>
+      logger.info(
+        "All database connections initialized, proceeding to the query execution phase"
+      )
       context.children.foreach { ref =>
         ref ! StartUnitRun
       }
       context.become(waitForFinish(client, Nil))
 
     case UnitRunInitializationFinished =>
-      logger.debug(s"Initialized database connections: ${collectedCount + 1}/$totalConnections")
+      logger.debug(
+        s"Initialized database connections: ${collectedCount + 1}/$totalConnections"
+      )
       context.become(waitForInitConfirmation(client, collectedCount + 1))
 
     case UnitRunInitializationFailed(e) =>
       val msg = e match {
         case _: ClassNotFoundException => s"Class ${e.getMessage} not found"
-        case _ => e.getMessage
+        case _                         => e.getMessage
       }
 
       logger.error(s"Cannot initialize database connection: $msg")
@@ -51,10 +63,17 @@ class ControllerActor(sc: ScenarioConfig) extends Actor with LazyLogging {
       client ! Status.Failure(new ConnectionInitException(e))
   }
 
-  private def waitForFinish(client: ActorRef, unitRunResults: List[(String, UnitRunResult)]): Receive = LoggingReceive {
+  private def waitForFinish(
+      client: ActorRef,
+      unitRunResults: List[(String, UnitRunResult)]
+  ): Receive = LoggingReceive {
     case UnitRunFinished(unitName, result) =>
-      logger.info(s"Finished unit runs: ${unitRunResults.length + 1}/$totalConnections")
-      context.become(waitForFinish(client, (unitName -> result) :: unitRunResults))
+      logger.info(
+        s"Finished unit runs: ${unitRunResults.length + 1}/$totalConnections"
+      )
+      context.become(
+        waitForFinish(client, (unitName -> result) :: unitRunResults)
+      )
       if (totalConnections - unitRunResults.length == 1) self ! Done
 
     case UnitRunError(e) =>
@@ -64,10 +83,15 @@ class ControllerActor(sc: ScenarioConfig) extends Actor with LazyLogging {
     case Done =>
       val allCalls = unitRunResults.flatMap(_._2.callResults)
       val failedCalls = allCalls.count(_.isInstanceOf[DbCallFailure])
-      val msg = if (failedCalls > 0) s"($failedCalls/${allCalls.length} calls failed)" else ""
+      val msg =
+        if (failedCalls > 0) s"($failedCalls/${allCalls.length} calls failed)"
+        else ""
       logger.info("All database operations finished {}", msg)
-      val unitResultMap = unitRunResults.groupBy(_._1).view.mapValues(_.map(_._2))
-      client ! ScenarioResult(sc.units.map(conf => UnitResult(conf, unitResultMap(conf.name))).toList)
+      val unitResultMap =
+        unitRunResults.groupBy(_._1).view.mapValues(_.map(_._2))
+      client ! ScenarioResult(
+        sc.units.map(conf => UnitResult(conf, unitResultMap(conf.name))).toList
+      )
   }
 }
 
@@ -79,7 +103,10 @@ object ControllerActor {
 
   private[actor] final case class UnitRunInitializationFailed(e: Throwable)
 
-  private[actor] final case class UnitRunFinished(unitName: String, result: UnitRunResult)
+  private[actor] final case class UnitRunFinished(
+      unitName: String,
+      result: UnitRunResult
+  )
 
   private[actor] final case class UnitRunError(e: UnitRunException)
 

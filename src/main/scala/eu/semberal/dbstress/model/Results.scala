@@ -14,13 +14,22 @@ object Results {
     val dbCallId: DbCallId
   }
 
-  case class DbCallId(scenarioId: String, connectionId: String, statementId: String) {
+  case class DbCallId(
+      scenarioId: String,
+      connectionId: String,
+      statementId: String
+  ) {
     override def toString = s"${scenarioId}_${connectionId}_$statementId"
   }
 
-  case class DbCallSuccess(duration: Long, dbCallId: DbCallId, stmtResult: StatementResult) extends DbCallResult
+  case class DbCallSuccess(
+      duration: Long,
+      dbCallId: DbCallId,
+      stmtResult: StatementResult
+  ) extends DbCallResult
 
-  case class DbCallFailure(duration: Long, dbCallId: DbCallId, e: Throwable) extends DbCallResult
+  case class DbCallFailure(duration: Long, dbCallId: DbCallId, e: Throwable)
+      extends DbCallResult
 
   sealed trait StatementResult
 
@@ -28,9 +37,15 @@ object Results {
 
   case class UpdateCount(n: Int) extends StatementResult
 
-  case class UnitRunResult(connInitResult: DbConnInitResult, callResults: List[DbCallResult])
+  case class UnitRunResult(
+      connInitResult: DbConnInitResult,
+      callResults: List[DbCallResult]
+  )
 
-  case class UnitResult(unitConfig: UnitConfig, unitRunResults: List[UnitRunResult]) {
+  case class UnitResult(
+      unitConfig: UnitConfig,
+      unitRunResults: List[UnitRunResult]
+  ) {
     lazy val summary: UnitSummary = {
 
       val allDbCalls = unitRunResults.flatMap(_.callResults)
@@ -41,9 +56,7 @@ object Results {
 
       UnitSummary(
         StatsResults(connInits.map(_.duration)),
-
         unitConfig.parallelConnections * unitConfig.config.repeats,
-
         StatsResults(allDbCalls.map(_.duration)),
         StatsResults(successfulDbCalls.map(_.duration)),
         StatsResults(failedDbCalls.map(_.duration))
@@ -53,15 +66,13 @@ object Results {
 
   case class ScenarioResult(unitResults: List[UnitResult])
 
-  case class UnitSummary
-  (
-    connectionInitsSummary: StatsResults,
-
-    expectedDbCalls: Int,
-
-    executedDbCallsSummary: StatsResults,
-    successfulDbCallsSummary: StatsResults,
-    failedDbCallsSummary: StatsResults)
+  case class UnitSummary(
+      connectionInitsSummary: StatsResults,
+      expectedDbCalls: Int,
+      executedDbCallsSummary: StatsResults,
+      successfulDbCallsSummary: StatsResults,
+      failedDbCallsSummary: StatsResults
+  )
 
   class ConnectionInitException(e: Throwable) extends RuntimeException(e)
 

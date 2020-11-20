@@ -6,7 +6,9 @@ import eu.semberal.dbstress.util.ResultsExport
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future._
 
-class ExportingService(resultsExport: Seq[ResultsExport])(implicit ec: ExecutionContext) {
+class ExportingService(resultsExport: Seq[ResultsExport])(implicit
+    ec: ExecutionContext
+) {
 
   def export(sr: ScenarioResult): Future[Unit] = {
     sequence(resultsExport.map(x => Future(x.export(sr)))).map(_ => ())
