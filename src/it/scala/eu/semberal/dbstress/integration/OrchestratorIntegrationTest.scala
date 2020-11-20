@@ -3,7 +3,10 @@ package eu.semberal.dbstress.integration
 import akka.testkit.ImplicitSender
 import org.scalatest.flatspec.AnyFlatSpecLike
 
-class OrchestratorIntegrationTest extends AnyFlatSpecLike with ImplicitSender with AbstractDbstressIntegrationTest {
+class OrchestratorIntegrationTest
+    extends AnyFlatSpecLike
+    with ImplicitSender
+    with AbstractDbstressIntegrationTest {
 
   "Orchestrator" should "successfully launch the test of PostgreSQL and verify results" in {
     val tmpDir = executeTest("config.postgres.yaml")

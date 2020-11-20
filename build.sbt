@@ -17,14 +17,28 @@ val dependencies = Seq(
   "org.postgresql" % "postgresql" % Versions.postgres % "test, it"
 )
 
-lazy val root = (project in file(".")).enablePlugins(PackPlugin).settings(
-  organization := "eu.semberal",
-  name := "dbstress",
-  version := sys.env.getOrElse("DBSTRESS_CI_BUILD_VERSION", "0.0.0-SNAPSHOT"),
-  scalaVersion := Versions.scala,
-  scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-Xfatal-warnings", "-Ywarn-unused:imports")
-).configs(IntegrationTest).settings(Defaults.itSettings: _*)
+lazy val dbstresss = (project in file("."))
+  .enablePlugins(PackPlugin)
+  .settings(
+    organization := "eu.semberal",
+    name := "dbstress",
+    version := "1.1.0-SNAPSHOT",
+    scalaVersion := Versions.scala,
+    scalacOptions ++= Seq(
+      "-unchecked",
+      "-deprecation",
+      "-feature",
+      "-Xfatal-warnings",
+      "-Ywarn-unused:imports"
+    )
+  )
+  .configs(IntegrationTest)
+  .settings(Defaults.itSettings: _*)
   .settings(libraryDependencies ++= dependencies: _*)
   .settings(packMain := Map("dbstress" -> "eu.semberal.dbstress.Main"))
-  .settings(packArchiveExcludes := List("VERSION", "Makefile")
-)
+  .settings(packArchiveExcludes := List("VERSION", "Makefile"))
+  .settings(
+    inConfig(IntegrationTest)(
+      org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings
+    )
+  )

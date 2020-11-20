@@ -9,7 +9,9 @@ object ModelExtensions {
 
     private lazy val ds = new DescriptiveStatistics(l.map(_.toDouble).toArray)
 
-    private def doCalculate(f: DescriptiveStatistics => Double): Option[Double] = if (l.isEmpty) None else Some(f(ds))
+    private def doCalculate(
+        f: DescriptiveStatistics => Double
+    ): Option[Double] = if (l.isEmpty) None else Some(f(ds))
 
     def median: Option[Double] = doCalculate(_.getPercentile(50))
 
@@ -23,10 +25,12 @@ object ModelExtensions {
   }
 
   implicit class DoubleOpt[T](o: Option[T]) {
-    def getOrMissingString: String = o.map {
-      case x: Double => Precision.round(x, 2).toString
-      case x => x.toString
-    }.getOrElse("-")
+    def getOrMissingString: String = o
+      .map {
+        case x: Double => Precision.round(x, 2).toString
+        case x         => x.toString
+      }
+      .getOrElse("-")
   }
 
 }

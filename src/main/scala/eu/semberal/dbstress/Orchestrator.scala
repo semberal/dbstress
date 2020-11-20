@@ -17,7 +17,8 @@ class Orchestrator(actorSystem: ActorSystem) extends LazyLogging {
 
   def run(sc: ScenarioConfig, exports: List[ResultsExport]): Future[Unit] = {
 
-    val controller = actorSystem.actorOf(ControllerActor.props(sc), "controller")
+    val controller =
+      actorSystem.actorOf(ControllerActor.props(sc), "controller")
 
     implicit val timeout: Timeout = Utils.ScenarioTimeout
 
