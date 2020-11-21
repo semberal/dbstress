@@ -2,9 +2,11 @@ name: build
 on:
   push:
   schedule:
-    - cron:  '* 3 * * *'
+    - cron:  '30 13 * * *'
 jobs:
   build:
+    env:
+      DBSTRESS_VERSION: 1.1.0-SNAPSHOT
     strategy:
       matrix:
         java: [ 8, 15 ]
@@ -30,12 +32,18 @@ jobs:
         run: sbt test:test
       - name: Run integration tests
         run: sbt it:test
-      - name: Create distribution
-        run: sbt packArchive
-      - name: Archive distributions
+
+      # Distribution is created only in Java 8 builds
+      - name: Prepare distribution
+        run: |
+          sbt pack
+          rm ./target/pack/Makefile
+          mv ./target/pack ./target/dbstress-${{ env.DBSTRESS_VERSION }}
+      - name: Upload distribution artifact
+        if: ${{ matrix.java == 8 }}
         uses: actions/upload-artifact@v2
         with:
-          name: dbstress-archives-bundle
-          path: |
-            ./target/*.zip
-            ./target/*.tar.gz
+          retention-days: 3
+          if-no-files-found: error
+          name: dbstress-${{ env.DBSTRESS_VERSION }}.zip
+          path: ./target/dbstress-${{ env.DBSTRESS_VERSION }}

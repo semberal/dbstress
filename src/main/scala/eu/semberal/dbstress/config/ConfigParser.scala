@@ -138,14 +138,14 @@ object ConfigParser {
   )(implicit ev: U => T): Either[String, Option[T]] = {
     val rtc = implicitly[ClassTag[U]].runtimeClass
     map.get(key) match {
-      case None => Right(default)
-      case Some(x) if !rtc.isInstance(x) =>
+      case None                                 => Right(default)
+      case Some(x: U) if validationIfPresent(x) => Right(Some(x))
+      case Some(x: U) =>
+        Left(s"""Invalid value "$x" for configuration entry: "$key"""")
+      case Some(x) =>
         Left(
           s"""Value "$x" does conform to the expected type: "${rtc.getSimpleName}""""
         )
-      case Some(x: U) if !validationIfPresent(x) =>
-        Left(s"""Invalid value "$x" for configuration entry: "$key"""")
-      case Some(x: U) => Right(Some(x))
     }
   }
 }
