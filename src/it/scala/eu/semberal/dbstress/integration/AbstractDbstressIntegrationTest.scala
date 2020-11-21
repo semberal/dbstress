@@ -36,11 +36,14 @@ trait AbstractDbstressIntegrationTest
         getClass.getClassLoader.getResourceAsStream(configFile)
       )
     ).autoClosed
+
     val config = parseConfigurationYaml(
       reader,
       Some("")
     ) getOrElse (throw new IllegalStateException("Cannot parse configuration"))
+
     val exports: List[ResultsExport] = new CsvResultsExport(tmpDir) :: Nil
+
     whenReady(
       new Orchestrator(system).run(config, exports),
       Timeout(Span(10, Seconds))

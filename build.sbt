@@ -22,7 +22,7 @@ lazy val dbstresss = (project in file("."))
   .settings(
     organization := "eu.semberal",
     name := "dbstress",
-    version := "1.1.0-SNAPSHOT",
+    version := sys.env.getOrElse("DBSTRESS_VERSION", "0.0.0-SNAPSHOT"),
     scalaVersion := Versions.scala,
     scalacOptions ++= Seq(
       "-unchecked",
@@ -36,7 +36,6 @@ lazy val dbstresss = (project in file("."))
   .settings(Defaults.itSettings: _*)
   .settings(libraryDependencies ++= dependencies: _*)
   .settings(packMain := Map("dbstress" -> "eu.semberal.dbstress.Main"))
-  .settings(packArchiveExcludes := List("VERSION", "Makefile"))
   .settings(
     inConfig(IntegrationTest)(
       org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings
