@@ -15,6 +15,10 @@ object ModelExtensions {
 
     def median: Option[Double] = doCalculate(_.getPercentile(50))
 
+    def p90: Option[Double] = doCalculate(_.getPercentile(90))
+
+    def p99: Option[Double] = doCalculate(_.getPercentile(99))
+
     def mean: Option[Double] = doCalculate(_.getMean)
 
     def stddev: Option[Double] = doCalculate(_.getStandardDeviation)
