@@ -14,8 +14,7 @@ and generates a CSV with summarized results.
 
 ## Obtaining and running
 
-Download the latest release from the [releases page](https://github.com/semberal/dbstress/releases)
-([nighly builds](https://github.com/semberal/dbstress/actions?query=branch%3Amaster) are also available).
+Download the latest release from the [releases page](https://github.com/semberal/dbstress/releases). 
 
 Two command line arguments are mandatory: _scenario configuration_ and _output directory_:
 
