@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     env:
-      DBSTRESS_VERSION: 1.1.0
+      DBSTRESS_VERSION: 1.2.0-SNAPSHOT
     strategy:
       matrix:
         java: [ 8, 17 ]
