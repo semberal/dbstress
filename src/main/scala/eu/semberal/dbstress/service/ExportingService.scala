@@ -10,8 +10,8 @@ class ExportingService(resultsExport: Seq[ResultsExport])(implicit
     ec: ExecutionContext
 ) {
 
-  def export(sr: ScenarioResult): Future[Unit] = {
-    sequence(resultsExport.map(x => Future(x.export(sr)))).map(_ => ())
+  def runExport(sr: ScenarioResult): Future[Unit] = {
+    sequence(resultsExport.map(x => Future(x.runExport(sr)))).map(_ => ())
   }
 
 }

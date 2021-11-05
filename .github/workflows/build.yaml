@@ -1,20 +1,25 @@
 name: build
 on:
   push:
-  schedule:
-    - cron:  '30 13 * * *'
+    branches:
+      - master
+    tags:
+      - "release-*"
+  pull_request:
+    branches:
+      - master
 jobs:
   build:
     env:
       DBSTRESS_VERSION: 1.1.0-SNAPSHOT
     strategy:
       matrix:
-        java: [ 8, 15 ]
+        java: [ 8, 17 ]
     name: Build (JDK ${{ matrix.java }})
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:latest
+        image: postgres:13
         ports:
           - 5432:5432
         env:
@@ -32,6 +37,11 @@ jobs:
         run: sbt test:test
       - name: Run integration tests
         run: sbt it:test
+      - name: Check CLI
+        run: |
+          sbt pack
+          ./target/pack/bin/dbstress --help
+          ./target/pack/bin/dbstress --version | grep ${{ env.DBSTRESS_VERSION }}
 
       # Distribution is created only in Java 8 builds
       - name: Prepare distribution

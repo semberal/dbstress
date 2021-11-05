@@ -13,11 +13,11 @@ trait ResultsExport {
   protected val curr: String =
     filePathFriendlyDateTimeFormat.format(LocalDateTime.now())
 
-  def export(sr: ScenarioResult): Unit
+  def runExport(sr: ScenarioResult): Unit
 }
 
 class CsvResultsExport(outputDir: File) extends ResultsExport with LazyLogging {
-  override def export(sr: ScenarioResult): Unit = {
+  override def runExport(sr: ScenarioResult): Unit = {
     val csvFile = outputDir / s"summary.$curr.csv"
 
     logger.info(s"Exporting results to $csvFile")

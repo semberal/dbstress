@@ -24,6 +24,6 @@ class Orchestrator(actorSystem: ActorSystem) extends LazyLogging {
 
     implicit val executionContext = actorSystem.dispatcher
     val es = new ExportingService(exports)
-    (controller ? RunScenario).mapTo[ScenarioResult].flatMap(es.export)
+    (controller ? RunScenario).mapTo[ScenarioResult].flatMap(es.runExport)
   }
 }
