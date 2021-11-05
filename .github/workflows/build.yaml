@@ -48,12 +48,13 @@ jobs:
         run: |
           sbt pack
           rm ./target/pack/Makefile
-          mv ./target/pack ./target/dbstress-${{ env.DBSTRESS_VERSION }}
+          mkdir ./target/final-distribution
+          mv ./target/pack ./target/final-distribution/dbstress-${{ env.DBSTRESS_VERSION }}
       - name: Upload distribution artifact
         if: ${{ matrix.java == 8 }}
         uses: actions/upload-artifact@v2
         with:
           retention-days: 3
           if-no-files-found: error
-          name: dbstress-${{ env.DBSTRESS_VERSION }}.zip
-          path: ./target/dbstress-${{ env.DBSTRESS_VERSION }}
+          name: dbstress-${{ env.DBSTRESS_VERSION }}
+          path: ./target/final-distribution
