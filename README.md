@@ -82,7 +82,28 @@ Therefore, every unit sends the query to the database `PAR*REP` times.
 The following diagram shows the meaning of the `PAR` and `REP` variables, as well as the overall description of
 individual components and how they parallelize:
 
-![Components overview](images/scenario.jpg?raw=true)
+```mermaid
+%% https://mermaid-js.github.io/mermaid-live-editor
+graph TD;
+
+Note["PAR(Unit1)=2; REP(Unit1)=3<br>PAR(Unit2)=1; REP(Unit2)=2<br>PAR(Unit3)=3; REP(Unit3)=4"];
+
+Scenario{{Scenario}} --> Unit1((Unit 1));
+Scenario --> Unit2((Unit 2));
+Scenario --> Unit3((Unit 3));
+Unit1 --> Unit1.Run1([Run 1]);
+Unit1 --> Unit1.Run2([Run 2]);
+Unit2 --> Unit2.Run1([Run 1]);
+Unit3 --> Unit3.Run1([Run 1]);
+Unit3 --> Unit3.Run2([Run 2]);
+Unit3 --> Unit3.Run3([Run 3]);
+Unit1.Run1 --> Call1.1.1[Call] --> Call1.1.2[Call] --> Call1.1.3[Call];
+Unit1.Run2 --> Call1.2.1[Call] --> Call1.2.2[Call] --> Call1.2.3[Call];
+Unit2.Run1 --> Call2.1.1[Call] --> Call2.1.2[Call];
+Unit3.Run1 --> Call3.1.1[Call] --> Call3.1.2[Call] --> Call3.1.3[Call] --> Call3.1.4[Call];
+Unit3.Run2 --> Call3.2.1[Call] --> Call3.2.2[Call] --> Call3.2.3[Call] --> Call3.2.4[Call];
+Unit3.Run3 --> Call3.3.1[Call] --> Call3.3.2[Call] --> Call3.3.3[Call] --> Call3.3.4[Call];
+```
 
 ### Threading
 In _dbstress_, there are two important thread pools. The first one is used by the Akka internally and can spawn up
