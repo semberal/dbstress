@@ -30,7 +30,7 @@ it into the `lib/` directory.
 Top level configuration element is a _scenario_, which consists of at least one _unit_.
 A _unit_ represents a particular database operation, along with its configuration.
 All configured units within a scenario run in parallel, independently of each other and their results are also
-reported separately. Unless you need to do some more advanced testing, such as connecting to the database with
+reported separately. Unless you need to do some more advanced testing, such as connecting to different database hosts, with
 different users or to different schemas, it is perfectly fine to have a scenario with just a single unit.
 
 Unit configuration consists of:
