@@ -2,6 +2,9 @@
 
  [![GitHub Actions](https://github.com/semberal/dbstress/workflows/build/badge.svg)](https://github.com/semberal/dbstress/actions)
 
+**UPDATE (09-09-2023)**: Due to lack of time, I am archiving this project. Feel free to continue using it, but there will be no new 
+features or bug fixes.
+
 ## Introduction
 
 _dbstress_ is an open-source database performance and stress testing tool written in
